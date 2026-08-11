@@ -1,0 +1,16 @@
+@using StarterAspMVCEditorTemplates
+@using StarterAspMVCEditorTemplates.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@*
+    Deliberately does NOT import StarterAspMVCEditorTemplates.Models.Account.
+
+    This file is shared by every combo, but Models/Account/ only exists when the
+    project is generated with Identity. Importing it here made the --auth none
+    combo fail to compile with CS0234 on a namespace that had been excluded on
+    purpose -- and the error pointed at this file, not at the exclusion.
+
+    The account views name their model type in full instead, so the dependency
+    lives only in files that are themselves excluded alongside the models.
+*@

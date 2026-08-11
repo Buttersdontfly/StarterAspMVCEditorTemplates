@@ -1,0 +1,221 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+# A second push should cancel the first rather than queue behind it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # MSBuild keeps worker nodes alive with task assemblies loaded, which locks
+  # files in the NuGet package folder and causes "access is denied" on a later
+  # restore. Harmless on a fresh runner, but these jobs build several times.
+  MSBUILDDISABLENODEREUSE: 1
+  DOTNET_CLI_USE_MSBUILD_SERVER: 0
+
+jobs:
+  # Static checks. Seconds, and they catch the errors that otherwise only appear
+  # after pack, install and generate.
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # MinVer reads tags; without them every pack is 0.0.0-alpha.0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build scripts parse
+        shell: pwsh
+        run: ./build/Test-PowerShellSyntax.ps1
+
+      - name: XML files are well-formed
+        shell: pwsh
+        run: ./build/Test-XmlWellFormed.ps1
+
+      - name: C# template source parses
+        shell: pwsh
+        run: ./build/Test-CSharpSyntax.ps1
+
+      - name: template.json paths resolve
+        shell: pwsh
+        run: ./build/Test-TemplatePaths.ps1
+
+  # Generate both combos and lint the output.
+  lint-generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - run: dotnet pack src/StarterAspMVCEditorTemplates.Templates -o ./artifacts
+      - run: dotnet new install ./artifacts/*.nupkg
+
+      - name: Generate both combos
+        run: |
+          dotnet new starterasp-mvc -n IdentityApp -o ./out/identity --auth identity --no-restore
+          dotnet new starterasp-mvc -n PlainApp    -o ./out/none     --auth none     --no-restore
+
+      - name: Lint generated output
+        shell: pwsh
+        run: ./build/Lint-Generated.ps1 -Root ./out
+
+  # Build and run the tests that ship inside generated projects.
+  generated-app:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        auth: [ identity, none ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - run: dotnet pack src/StarterAspMVCEditorTemplates.Templates -o ./artifacts
+      - run: dotnet new install ./artifacts/*.nupkg
+      - run: dotnet new starterasp-mvc -n TestApp -o ./out --auth ${{ matrix.auth }}
+
+      # Run from inside the output directory. `dotnet build <dir>` depends on
+      # there being exactly one project or solution to discover, which is a
+      # detail worth not relying on.
+      - name: Build
+        working-directory: ./out
+        run: dotnet build
+
+      - name: Test
+        working-directory: ./out
+        run: dotnet test --no-build
+
+  # Tests for the template itself: what each combo generates, and that both compile.
+  template-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - run: dotnet test tests/StarterAspMVCEditorTemplates.TemplateTests
+
+  # Proves the offline claim rather than assuming it: restore once with the
+  # network, then again with every package source removed.
+  offline-restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - run: dotnet pack src/StarterAspMVCEditorTemplates.Templates -o ./artifacts
+      - run: dotnet new install ./artifacts/*.nupkg
+      - run: dotnet new starterasp-mvc -n OfflineApp -o ./out --auth identity
+
+      - name: The first restore must have written a lock file
+        run: test -f ./out/src/OfflineApp/packages.lock.json
+
+      - name: Restore and build with no package source reachable
+        working-directory: ./out
+        run: |
+          dotnet nuget locals http-cache --clear
+          printf '<configuration><packageSources><clear /></packageSources></configuration>' > NuGet.config
+          dotnet restore --locked-mode
+          dotnet build --no-restore
+
+  # Golden samples: regenerating must produce no change, so every template edit
+  # surfaces as a reviewable diff per combo.
+  golden-samples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - name: samples/ must be committed
+        run: |
+          if [ -z "$(git ls-files samples/identity samples/none)" ]; then
+            echo "::error::samples/ has no committed content. Run ./build/Regen-Samples.ps1 and commit the result, or this check proves nothing."
+            exit 1
+          fi
+
+      - shell: pwsh
+        run: ./build/Regen-Samples.ps1
+
+      - name: Fail if samples/ is stale
+        run: |
+          # --porcelain, not `git diff`: regeneration can ADD files, and
+          # `git diff` does not report untracked ones. A check that silently
+          # passes is worse than no check at all.
+          CHANGES="$(git status --porcelain -- samples/)"
+          if [ -n "$CHANGES" ]; then
+            echo "::error::samples/ is out of date. Run ./build/Regen-Samples.ps1 and commit the result."
+            echo "$CHANGES"
+            git diff -- samples/ | head -200
+            exit 1
+          fi
+          echo "samples/ is up to date."
+
+  # Packs the artifact CI would publish, so packaging problems surface on the PR.
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore generated content that is not committed
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - run: dotnet pack src/StarterAspMVCEditorTemplates.Templates -c Release -o ./artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: ./artifacts/*.nupkg

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StarterAspMVCEditorTemplates/StarterAspMVCEditorTemplates.csproj" />
+  </Folder>
+  <!--#if (IncludeTests) -->
+  <Folder Name="/tests/">
+    <Project Path="tests/StarterAspMVCEditorTemplates.Tests/StarterAspMVCEditorTemplates.Tests.csproj" />
+  </Folder>
+  <!--#endif -->
+</Solution>

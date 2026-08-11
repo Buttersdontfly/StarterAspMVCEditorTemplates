@@ -1,0 +1,35 @@
+@model string
+
+@*
+    Fires on: [DataType(DataType.EmailAddress)].
+    MVC resolves scalar editors from the DataType before falling back to the
+    type name, so no [UIHint] is needed. See documentation/editor-templates.md.
+
+    Uses Html.*For helpers rather than asp-for tag helpers. In an editor template
+    the model IS the field, and there is no property to point a tag helper at --
+    asp-for needs an expression like m.Email, which does not exist here. The
+    helpers below read the field name from ViewData.TemplateInfo, so the
+    generated name and id stay correct however deeply the template is nested.
+*@
+
+@{
+    var fieldName = ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
+    var errorId = $"{fieldName.Replace('.', '_').Replace('[', '_').Replace(']', '_')}_error";
+    var invalid = ViewData.ModelState.GetFieldValidationState(fieldName)
+        == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid;
+}
+
+<div class="mb-3">
+    @Html.LabelFor(m => m, new { @class = "form-label" })
+    @Html.TextBoxFor(m => m, new
+    {
+        @class = "form-control" + (invalid ? " is-invalid" : ""),
+        type = "email",
+        autocomplete = "email",
+        inputmode = "email",
+        spellcheck = "false",
+        placeholder = "name@example.com",
+        aria_describedby = errorId
+    })
+    @Html.ValidationMessageFor(m => m, null, new { id = errorId, @class = "invalid-feedback d-block" })
+</div>

@@ -1,0 +1,32 @@
+@model string
+
+@*
+    Fires on: [UIHint("UserName")].
+
+    A plain string has no DataType and no distinctive type name to resolve on,
+    so an explicit UIHint is the only reliable hook.
+
+    SEAM: username identity. Rendered only when
+    AccountIdentityConventions.SignInWithEmail is false; with the default of
+    true, the login and register views ask for an email instead. Nothing here
+    needs changing either way. See documentation/seams.md.
+*@
+
+@{
+    var fieldName = ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
+    var errorId = $"{fieldName.Replace('.', '_').Replace('[', '_').Replace(']', '_')}_error";
+    var invalid = ViewData.ModelState.GetFieldValidationState(fieldName)
+        == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid;
+}
+
+<div class="mb-3">
+    @Html.LabelFor(m => m, new { @class = "form-label" })
+    @Html.TextBoxFor(m => m, new
+    {
+        @class = "form-control" + (invalid ? " is-invalid" : ""),
+        autocomplete = "username",
+        spellcheck = "false",
+        aria_describedby = errorId
+    })
+    @Html.ValidationMessageFor(m => m, null, new { id = errorId, @class = "invalid-feedback d-block" })
+</div>

@@ -1,0 +1,22 @@
+/* Project styles. Bootstrap 5.3 does the rest. */
+
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+/* Keyboard focus must stay visible — Bootstrap's default is fine, this just
+   makes sure nothing here removes it. */
+:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.navbar .btn-link {
+    text-decoration: none;
+}

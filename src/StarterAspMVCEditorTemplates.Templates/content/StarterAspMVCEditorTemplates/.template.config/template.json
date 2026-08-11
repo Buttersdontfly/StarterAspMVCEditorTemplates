@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Buttersdontfly",
+  "classifications": [ "Web", "MVC", "Identity", "Starter" ],
+  "identity": "StarterAspMVCEditorTemplates.Web.CSharp",
+  "groupIdentity": "StarterAspMVCEditorTemplates.Web",
+  "name": "ASP.NET Core MVC Starter with Editor Templates",
+  "description": "An ASP.NET Core MVC starter using SQLite and hand-rolled Identity pages built entirely from EditorTemplates (email, password, name, address).",
+  "shortName": "starterasp-mvc",
+  "sourceName": "StarterAspMVCEditorTemplates",
+  "defaultName": "MvcApp",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+
+  "symbols": {
+    "auth": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "identity",
+      "displayName": "Authentication",
+      "description": "Whether to include ASP.NET Core Identity with hand-rolled MVC account pages.",
+      "choices": [
+        {
+          "choice": "identity",
+          "displayName": "Identity",
+          "description": "Login, logout, register, forgot/reset password and change password, built from EditorTemplates."
+        },
+        {
+          "choice": "none",
+          "displayName": "None",
+          "description": "No account pages. Ships an empty AppDbContext wired to SQLite, ready for your own entities."
+        }
+      ]
+    },
+
+    "UseIdentity": {
+      "type": "computed",
+      "value": "(auth == \"identity\")"
+    },
+
+    "Framework": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "net10.0",
+      "displayName": "Framework",
+      "description": "The target framework for the project.",
+      "replaces": "net10.0",
+      "choices": [
+        { "choice": "net10.0", "displayName": ".NET 10.0", "description": "Target net10.0" }
+      ]
+    },
+
+    "IncludeTests": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "displayName": "Include test project",
+      "description": "Include a tests/ project with smoke tests for the generated app."
+    },
+
+    "SeededUserEmail": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "dev@localhost",
+      "displayName": "Seeded user email",
+      "description": "Email of the development user seeded on first run. Password is 123User! (see SeedData.cs).",
+      "replaces": "SEED-USER-EMAIL"
+    },
+
+    "skipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "displayName": "Skip restore",
+      "description": "If true, skips the automatic restore after generation. NOTE: the first restore must run online once; it writes packages.lock.json, after which restores work offline."
+    }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!UseIdentity)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Controllers/AccountController.cs",
+            "src/StarterAspMVCEditorTemplates/Views/Account/**",
+            "src/StarterAspMVCEditorTemplates/Views/Shared/_LoginPartial.cshtml",
+            "src/StarterAspMVCEditorTemplates/Views/Shared/EditorTemplates/UserName.cshtml",
+            "src/StarterAspMVCEditorTemplates/Models/Account/**",
+            "src/StarterAspMVCEditorTemplates/Identity/**",
+            "src/StarterAspMVCEditorTemplates/Data/SeedData.cs",
+            "src/StarterAspMVCEditorTemplates/Services/IdentityEmailSenderAdapter.cs",
+            "src/StarterAspMVCEditorTemplates/Migrations/**"
+          ]
+        },
+        {
+          "condition": "(!IncludeTests)",
+          "exclude": [ "tests/**" ]
+        }
+      ]
+    }
+  ],
+
+  "primaryOutputs": [
+    { "path": "src/StarterAspMVCEditorTemplates/StarterAspMVCEditorTemplates.csproj" },
+    {
+      "condition": "(IncludeTests)",
+      "path": "tests/StarterAspMVCEditorTemplates.Tests/StarterAspMVCEditorTemplates.Tests.csproj"
+    }
+  ],
+
+  "postActions": [
+    {
+      "id": "restore",
+      "condition": "(!skipRestore)",
+      "description": "Restore NuGet packages required by this project. This must succeed once while online; it writes packages.lock.json so later restores work offline.",
+      "manualInstructions": [ { "text": "Run 'dotnet restore' once while online." } ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

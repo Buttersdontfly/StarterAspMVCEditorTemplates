@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>SamplePlainApp</h1>
+<p class="lead">An MVC starter where every input is rendered by an editor template you own.</p>
+
+<div class="row g-3 mt-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 card-title">Editor templates</h2>
+                <p class="card-text">
+                    Email, password, person name and address live in
+                    <code>Views/Shared/EditorTemplates/</code>. Change one file and every
+                    form that uses it changes.
+                </p>
+                <a class="btn btn-outline-primary btn-sm" href="/dev/editors">See them all</a>
+                <span class="text-muted small ms-2">Development only</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 card-title">Mailbox</h2>
+                <p class="card-text">
+                    No email provider is configured, so messages are written to the console,
+                    to <code>App_Data/mail/</code>, and to a page you can click through.
+                    Password reset links land here.
+                </p>
+                <a class="btn btn-outline-primary btn-sm" href="/dev/mailbox">Open the mailbox</a>
+                <span class="text-muted small ms-2">Development only</span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,58 @@
+@model SamplePlainApp.Controllers.EditorGalleryModel
+@{
+    ViewData["Title"] = "Editor templates";
+}
+
+<h1 class="h3">Editor templates</h1>
+<p class="text-muted">
+    Every editor template, in three states. This page is what the L5 test snapshots:
+    add a template without adding it here and the test fails. Development only.
+</p>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <h2 class="h5">Filled</h2>
+        <form data-state="filled">
+            @Html.EditorFor(m => m.Filled.Email)
+            @Html.EditorFor(m => m.Filled.Password)
+            @Html.EditorFor(m => m.Filled.Name)
+            @Html.EditorFor(m => m.Filled.Address)
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <h2 class="h5">Invalid</h2>
+        <form data-state="invalid">
+            @Html.EditorFor(m => m.Invalid.Email)
+            @Html.EditorFor(m => m.Invalid.Password)
+            @Html.EditorFor(m => m.Invalid.Name)
+            @Html.EditorFor(m => m.Invalid.Address)
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <h2 class="h5">Empty</h2>
+        <form data-state="empty">
+            @Html.EditorFor(m => m.Empty.Email)
+            @Html.EditorFor(m => m.Empty.Password)
+            @Html.EditorFor(m => m.Empty.Name)
+            @Html.EditorFor(m => m.Empty.Address)
+        </form>
+    </div>
+</div>
+
+<hr class="my-4" />
+
+<h2 class="h5">How each one is chosen</h2>
+<table class="table table-sm">
+    <thead>
+        <tr><th>Template</th><th>Resolves by</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>EmailAddress.cshtml</code></td><td><code>[DataType(DataType.EmailAddress)]</code></td></tr>
+        <tr><td><code>Password.cshtml</code></td><td><code>[DataType(DataType.Password)]</code></td></tr>
+        <tr><td><code>PersonNameInputModel.cshtml</code></td><td>Type name</td></tr>
+        <tr><td><code>AddressInputModel.cshtml</code></td><td>Type name</td></tr>
+        <tr><td><code>UserName.cshtml</code></td><td><code>[UIHint("UserName")]</code> — ships unused</td></tr>
+    </tbody>
+</table>

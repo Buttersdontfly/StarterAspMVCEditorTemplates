@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    STOPPER FILE. Central Package Management is deliberately OFF in the generated
+    project so that swapping the EF provider is a single-file edit in
+    Directory.Build.props. Set ManagePackageVersionsCentrally to true if you'd
+    rather manage versions here.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

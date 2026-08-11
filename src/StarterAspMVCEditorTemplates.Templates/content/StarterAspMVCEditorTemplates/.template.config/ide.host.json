@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json.schemastore.org/vs-2017.3.host",
+  "icon": "icon.png",
+  "order": 0,
+  "symbolInfo": [
+    { "id": "auth",         "name": { "text": "Authentication" }, "isVisible": true },
+    { "id": "IncludeTests", "name": { "text": "Include test project" }, "isVisible": true },
+    { "id": "SeededUserEmail", "name": { "text": "Seeded user email" }, "isVisible": true },
+    { "id": "Framework",    "name": { "text": "Target framework" }, "isVisible": true }
+  ]
+}

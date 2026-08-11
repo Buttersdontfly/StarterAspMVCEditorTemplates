@@ -1,0 +1,82 @@
+name: Publish
+
+# Publishes on a GitHub Release. MinVer derives the version from the tag,
+# so tag as v1.0.0 (or v1.0.0-beta.1 for a prerelease) and publish the release.
+on:
+  release:
+    types: [ published ]
+
+env:
+  DOTNET_NOLOGO: true
+  MSBUILDDISABLENODEREUSE: 1
+  DOTNET_CLI_USE_MSBUILD_SERVER: 0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    # Gates the job so you can require a reviewer, and lets the nuget.org
+    # trusted publishing policy pin the environment claim as well as the repo.
+    # If you set this, enter the SAME name in the policy's Environment field.
+    environment: nuget-release
+
+    permissions:
+      contents: read
+      id-token: write   # required: without it the OIDC token request fails
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # MinVer needs tags
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Migrations and vendored assets are generated, not committed. Publishing
+      # without them produces a template that installs and then fails at runtime
+      # with no database tables and no styling.
+      - name: Restore generated content
+        shell: pwsh
+        run: ./build/Initialize-Repo.ps1
+
+      - name: Refuse to publish without generated content
+        shell: pwsh
+        run: |
+          $content = 'src/StarterAspMVCEditorTemplates.Templates/content/StarterAspMVCEditorTemplates/src/StarterAspMVCEditorTemplates'
+          if (-not (Get-ChildItem "$content/Migrations" -Filter *.cs -ErrorAction SilentlyContinue)) {
+              throw 'No migrations. The published template would create an empty database.'
+          }
+          if (-not (Test-Path "$content/wwwroot/lib/bootstrap/css/bootstrap.min.css")) {
+              throw 'No vendored assets. The published template would render unstyled.'
+          }
+          Write-Host 'Generated content present.' -ForegroundColor Green
+
+      - name: Pack
+        run: dotnet pack src/StarterAspMVCEditorTemplates.Templates -c Release -o ./artifacts
+
+      # Smoke-test the actual artifact before it is pushed: install it and
+      # generate + build both combos. Publishing a template that does not
+      # instantiate is the failure mode worth spending 90 seconds to avoid.
+      - name: Verify the packed template instantiates
+        run: |
+          dotnet new install ./artifacts/*.nupkg
+          dotnet new starterasp-mvc -n VerifyIdentity -o ./verify/identity --auth identity
+          dotnet new starterasp-mvc -n VerifyPlain    -o ./verify/none     --auth none
+          dotnet build ./verify/identity
+          dotnet build ./verify/none
+
+      # Keep this immediately before the push: the issued key is short-lived
+      # (about an hour).
+      - name: NuGet login (OIDC to short-lived API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}   # nuget.org profile name, NOT the email
+
+      - name: Push
+        run: >
+          dotnet nuget push ./artifacts/*.nupkg
+          --source https://api.nuget.org/v3/index.json
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --skip-duplicate

@@ -1,0 +1,74 @@
+<Project>
+
+  <!--
+    STOPPER FILE.
+    This exists so the generated project does not inherit MSBuild settings from a
+    parent directory if you drop it inside an existing repository. Do not add
+    <Import Project="$([MSBuild]::GetPathOfFileAbove(...))" /> unless you want that.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!--
+      Keep NuGet audit findings as WARNINGS, never errors.
+
+      TreatWarningsAsErrors is about YOUR code: a warning there is a defect you
+      introduced and can fix. Audit warnings (NU1901-NU1904) are different. They
+      come from an advisory database that changes underneath you, so a build that
+      passes today fails tomorrow when a new advisory is published against a
+      package you never touched — and usually against a TRANSITIVE dependency
+      you cannot upgrade anyway.
+
+      For a template that has to keep working for other people, that
+      non-determinism is unacceptable: it would break `dotnet new` for every
+      user the moment an advisory lands.
+
+      The findings still appear as warnings, which is the point. Review them with:
+          dotnet list package —vulnerable —include-transitive
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+
+    <!--
+      Pins every package version on first restore into packages.lock.json.
+      No lock file ships with the template: the correct one depends on which
+      options you chose. Run 'dotnet restore' once online; after that, restores
+      resolve from the global package cache and work with no network.
+      Add -p:RestoreLockedMode=true in CI to fail on unexpected version drift.
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <!--
+    SEAM: database provider.
+    SQLite is the default. To move to SQL Server, PostgreSQL, MySQL, ...:
+      1. Replace the PackageReference below.
+      2. Replace the UseSqlite(...) call in Program.cs (marked with the same SEAM tag).
+      3. Delete src/SampleIdentityApp/Migrations/ and re-run
+         'dotnet ef migrations add Initial'. The shipped migrations are
+         SQLite-generated and are NOT portable to another provider.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+
+    <!--
+      Known audit finding: Microsoft.EntityFrameworkCore.Sqlite pulls
+      SQLitePCLRaw.lib.e_sqlite3, whose bundled native SQLite is flagged by
+      CVE-2025-6965 (GHSA-2m69-gcr7-jv3q). It is an upstream issue with no fixed
+      2.1.x release; see dotnet/efcore#38257.
+
+      If your organisation requires a clean audit, you can force the newer
+      native bundle by uncommenting the line below. Note that this creates a
+      version skew between the managed and native halves of SQLitePCLRaw, so
+      verify your database actually works afterwards, and remove the pin once
+      EF Core ships a version that resolves a non-vulnerable bundle.
+    -->
+    <!-- <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" /> -->
+    <!-- <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" /> -->
+    <!-- <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" /> -->
+  </ItemGroup>
+
+</Project>

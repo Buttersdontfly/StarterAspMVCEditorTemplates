@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] – SampleIdentityApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom mb-4">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">SampleIdentityApp</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#nav" aria-controls="nav" aria-expanded="false"
+                        aria-label="Show navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="nav">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        @if (Context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
+                        {
+                            <li class="nav-item"><a class="nav-link" href="/dev/editors">Editor templates</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/dev/mailbox">Mailbox</a></li>
+                        }
+                    </ul>
+                    @* optional="true" means this renders only when the partial
+                       exists, which is how the layout stays free of template
+                       conditionals when Identity is not included. *@
+                    <partial name="_LoginPartial" optional="true" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container flex-grow-1">
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-success" role="alert">@status</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="border-top py-3 mt-4">
+        <div class="container text-muted small">
+            Built from the SampleIdentityApp template.
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,58 @@
+@model StarterAspMVCEditorTemplates.Models.AddressInputModel
+@using StarterAspMVCEditorTemplates.Models
+
+@*
+    Fires on: TYPE NAME — see PersonNameInputModel.cshtml for why, and
+    documentation/editor-templates.md for the full resolution order.
+
+    autocomplete tokens follow the WHATWG address field names, so browsers can
+    autofill the whole block rather than guessing field by field.
+*@
+
+<fieldset class="mb-3">
+    <legend class="form-label fs-6 mb-2">@(ViewData.ModelMetadata.DisplayName ?? "Address")</legend>
+
+    <div class="mb-2">
+        <label asp-for="Line1" class="form-label"></label>
+        <input asp-for="Line1" class="form-control" autocomplete="address-line1"
+               aria-describedby="@Html.IdFor(m => m.Line1)-error" />
+        <span id="@Html.IdFor(m => m.Line1)-error" asp-validation-for="Line1" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-2">
+        <label asp-for="Line2" class="form-label"></label>
+        <input asp-for="Line2" class="form-control" autocomplete="address-line2" />
+        <span asp-validation-for="Line2" class="text-danger small"></span>
+    </div>
+
+    <div class="row g-2 mb-2">
+        <div class="col-sm-6">
+            <label asp-for="City" class="form-label"></label>
+            <input asp-for="City" class="form-control" autocomplete="address-level2"
+                   aria-describedby="@Html.IdFor(m => m.City)-error" />
+            <span id="@Html.IdFor(m => m.City)-error" asp-validation-for="City" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-6">
+            <label asp-for="Region" class="form-label"></label>
+            <input asp-for="Region" class="form-control" autocomplete="address-level1" />
+            <span asp-validation-for="Region" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-2">
+        <div class="col-sm-5">
+            <label asp-for="PostalCode" class="form-label"></label>
+            <input asp-for="PostalCode" class="form-control" autocomplete="postal-code"
+                   aria-describedby="@Html.IdFor(m => m.PostalCode)-error" />
+            <span id="@Html.IdFor(m => m.PostalCode)-error" asp-validation-for="PostalCode" class="text-danger small"></span>
+        </div>
+        <div class="col-sm-7">
+            <label asp-for="Country" class="form-label"></label>
+            <select asp-for="Country" class="form-select" autocomplete="country"
+                    asp-items="@(new SelectList(Countries.All, nameof(Country.Code), nameof(Country.Name)))">
+                <option value="">Select a country</option>
+            </select>
+            <span asp-validation-for="Country" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>

@@ -1,0 +1,36 @@
+<Project>
+  <!-- Repo-level settings. These do NOT reach the template content: every
+       content root ships its own stopper Directory.Build.props. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Same reasoning as the generated project: audit findings are warnings,
+         not build failures. See the comment in content/.../Directory.Build.props. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+
+    <!-- MinVer: version is derived from the git tag. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <!-- Without git history MinVer warns MINVER1001 and falls back to
+         0.0.0-alpha.0. That is fine locally, but every pack then produces an
+         identically-versioned package, and NuGet caches by id + version — so a
+         template edit can silently install stale content. The local build
+         scripts pass -p:MinVerVersionOverride with a timestamp to avoid it.
+         Run `git init` and tag releases (v1.0.0) for real versioning. -->
+
+    <!--
+      Identity metadata. These flow into the published package, so they are set
+      here rather than scattered across projects. Run
+      build/Set-Metadata.ps1 to fill in the placeholders consistently across
+      this file, template.json, LICENSE and README.md.
+    -->
+    <Authors>Buttersdontfly</Authors>
+    <Company>Buttersdontfly</Company>
+    <Copyright>Copyright (c) 2026 Buttersdontfly</Copyright>
+    <RepositoryUrl>https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>

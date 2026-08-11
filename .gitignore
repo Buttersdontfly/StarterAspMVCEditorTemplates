@@ -1,0 +1,11 @@
+bin/
+obj/
+artifacts/
+out/
+*.user
+
+# samples/ IS committed on purpose: it is the golden-output diff check (L3).
+# Only the build noise inside it is ignored.
+samples/**/bin/
+samples/**/obj/
+samples/**/packages.lock.json
