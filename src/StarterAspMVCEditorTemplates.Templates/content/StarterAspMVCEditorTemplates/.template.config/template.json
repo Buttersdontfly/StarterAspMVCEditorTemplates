@@ -97,6 +97,7 @@
             "src/StarterAspMVCEditorTemplates/Views/Dev/**",
             "src/StarterAspMVCEditorTemplates/Views/Shared/_DevNavPartial.cshtml",
             "src/StarterAspMVCEditorTemplates/Views/Home/_DevCards.cshtml",
+            "src/StarterAspMVCEditorTemplates/Models/EditorSampleModel.cs",
             "src/StarterAspMVCEditorTemplates/Migrations/**",
             "tests/StarterAspMVCEditorTemplates.Tests/AccountFlowTests.cs",
             "tests/StarterAspMVCEditorTemplates.Tests/EditorTemplateTests.cs",

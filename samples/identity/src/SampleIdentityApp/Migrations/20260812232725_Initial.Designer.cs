@@ -11,7 +11,7 @@ using SampleIdentityApp.Data;
 namespace SampleIdentityApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260812224144_Initial")]
+    [Migration("20260812232725_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

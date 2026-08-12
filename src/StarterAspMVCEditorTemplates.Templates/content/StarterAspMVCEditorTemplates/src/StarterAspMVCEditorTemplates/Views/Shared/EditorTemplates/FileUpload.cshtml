@@ -1,0 +1,30 @@
+@*
+    Forced with [UIHint("FileUpload")]. asp-for on an IFormFile renders
+    type="file" by itself. The form must set enctype="multipart/form-data".
+
+    The name of the file already on disk is passed in by the caller:
+        @Html.EditorFor(m => m.Attachment, new { currentFile = Model.AttachmentFileName })
+*@
+@model IFormFile
+@{
+    var meta = ViewData.ModelMetadata;
+    var currentFile = ViewData["currentFile"] as string;
+    var accept = ViewData["accept"] as string;
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">@meta.GetDisplayName()</label>
+    <input asp-for="@Model" type="file" class="form-control" accept="@accept" />
+    @if (!string.IsNullOrWhiteSpace(currentFile))
+    {
+        <div class="form-text">
+            Currently attached:
+            <a href="~/uploads/@currentFile" target="_blank" rel="noopener">@currentFile</a>
+            &mdash; choosing a new file replaces it.
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

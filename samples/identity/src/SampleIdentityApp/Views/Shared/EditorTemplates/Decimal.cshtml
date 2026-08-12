@@ -1,0 +1,29 @@
+@*
+    Resolved on the type name for decimal properties.
+    Override the currency symbol per field:
+    Html.EditorFor(m => m.Budget, new { currency = "CHF" })
+*@
+@model decimal
+@{
+    var meta = ViewData.ModelMetadata;
+    var currency = ViewData["currency"] as string ?? "EUR";
+    var step = ViewData["step"] as string ?? "0.01";
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <div class="input-group">
+        <span class="input-group-text">@currency</span>
+        <input asp-for="@Model" asp-format="{0:0.##}" type="number" step="@step" class="form-control text-end" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

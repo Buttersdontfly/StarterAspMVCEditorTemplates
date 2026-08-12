@@ -14,11 +14,23 @@ namespace StarterAspMVCEditorTemplates.Tests;
 public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<TestWebAppFactory>
 {
     /// <summary>
-    /// Update this when you add an editor template, and add it to the gallery.
+    /// One entry per editor template. Update this when you add one, and add a
+    /// property to EditorSampleModel so the gallery renders it.
+    ///
+    /// Names are checked with EndsWith because the gallery prefixes each state
+    /// (Filled.Email, Empty.Email, ...).
     /// </summary>
     private static readonly string[] ExpectedFields =
     [
-        "Email", "Password",
+        // Resolved by type name
+        "PlainText", "WholeNumber", "Amount", "Enabled",
+        "Date", "Time", "Timestamp", "Status", "OptionalStatus",
+        // Resolved by [DataType]
+        "Email", "Password", "Website", "Phone", "Notes",
+        // Forced with [UIHint]
+        "CountryCode", "PreferredContact", "Interests", "Tags",
+        "BrandColor", "Satisfaction", "Volume", "Attachment", "UserName",
+        // Complex types
         "Name.FirstName", "Name.LastName",
         "Address.Line1", "Address.Line2", "Address.City",
         "Address.Region", "Address.PostalCode", "Address.Country"
@@ -33,11 +45,64 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
         var document = await HtmlPage.ReadAsync(response);
         var names = HtmlPage.FieldNames(document);
 
-        // Names are prefixed per state (Filled.Email, Empty.Email, ...).
-        foreach (var field in ExpectedFields)
-        {
-            Assert.Contains(names, name => name.EndsWith(field, StringComparison.Ordinal));
-        }
+        var missing = ExpectedFields
+            .Where(field => !names.Any(name => name.EndsWith(field, StringComparison.Ordinal)))
+            .ToList();
+
+        Assert.True(missing.Count == 0,
+            "These fields never rendered on /dev/editors, so their templates are untested:\n"
+            + string.Join("\n", missing));
+    }
+
+    [Fact]
+    public async Task Collection_template_renders_indexed_field_names()
+    {
+        // The collection case breaks most easily: MVC supplies the index, and a
+        // template that builds its own names loses it. Binding then silently
+        // drops every row.
+        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var document = await HtmlPage.ReadAsync(response);
+        var names = HtmlPage.FieldNames(document);
+
+        Assert.Contains(names, n => n.Contains("LineItems[0].Description", StringComparison.Ordinal));
+        Assert.Contains(names, n => n.Contains("LineItems[1].Quantity", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("input[type=\"email\"]")]
+    [InlineData("input[type=\"url\"]")]
+    [InlineData("input[type=\"tel\"]")]
+    [InlineData("input[type=\"date\"]")]
+    [InlineData("input[type=\"time\"]")]
+    [InlineData("input[type=\"datetime-local\"]")]
+    [InlineData("input[type=\"number\"]")]
+    [InlineData("input[type=\"range\"]")]
+    [InlineData("input[type=\"color\"]")]
+    [InlineData("input[type=\"file\"]")]
+    [InlineData("input[type=\"radio\"]")]
+    [InlineData("input[type=\"checkbox\"]")]
+    [InlineData("textarea")]
+    [InlineData("select")]
+    public async Task Gallery_renders_the_expected_input_types(string selector)
+    {
+        // Guards the detail that makes these templates worth having. A date
+        // field rendered as a plain text box still binds correctly, so nothing
+        // else in the suite would notice the regression.
+        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var document = await HtmlPage.ReadAsync(response);
+
+        Assert.NotEmpty(document.QuerySelectorAll(selector));
+    }
+
+    [Fact]
+    public async Task Enum_template_uses_display_names()
+    {
+        // [Display(Name = "In review")] on an enum member must reach the option
+        // text, or the UI shows the raw identifier.
+        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var document = await HtmlPage.ReadAsync(response);
+
+        Assert.Contains("In review", document.Body!.TextContent, StringComparison.Ordinal);
     }
 
     [Fact]

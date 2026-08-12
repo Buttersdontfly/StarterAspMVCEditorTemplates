@@ -33,6 +33,7 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Dev/Mailbox.cshtml")]
     [InlineData("Views/Shared/_DevNavPartial.cshtml")]
     [InlineData("Views/Home/_DevCards.cshtml")]
+    [InlineData("Models/EditorSampleModel.cs")]
     [InlineData("Migrations")]
     public void Identity_only_files_are_present_with_identity(string relativePath)
     {
@@ -52,6 +53,7 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Dev/")]
     [InlineData("Views/Shared/_DevNavPartial.cshtml")]
     [InlineData("Views/Home/_DevCards.cshtml")]
+    [InlineData("Models/EditorSampleModel.cs")]
     [InlineData("Migrations/")]
     public void Identity_only_files_are_absent_without_identity(string relativePath)
     {
@@ -68,6 +70,22 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Shared/EditorTemplates/Password.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/AddressInputModel.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/PersonNameInputModel.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/String.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Int32.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Decimal.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Boolean.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Enum.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Dropdown.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/RadioGroup.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/CheckboxList.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Tags.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Color.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Rating.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/Range.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/FileUpload.cshtml")]
+    [InlineData("Views/Shared/EditorTemplates/LineItem.cshtml")]
+    [InlineData("Models/LineItem.cs")]
+    [InlineData("wwwroot/js/editor-templates.js")]
     [InlineData("Data/AppDbContext.cs")]
     [InlineData("Controllers/HomeController.cs")]
     [InlineData("Views/Shared/_Layout.cshtml")]
@@ -156,8 +174,17 @@ public class GenerationTests(TemplateFixture fixture)
 
     /// <summary>
     /// No C# outside the conventions class may read or assign the Identity
-    /// user's UserName. Views are exempt from this particular rule because in a
-    /// view `.UserName` refers to the input model, checked above instead.
+    /// user's UserName.
+    ///
+    /// Scoped to files that actually work with Identity types. "UserName" is an
+    /// ordinary property name that view models and sample data use too: the
+    /// gallery sets `UserName = "ada"` on its own sample model, which is not a
+    /// seam violation. A file that never mentions IdentityUser cannot be
+    /// touching Identity's UserName, so the Identity reference is what makes
+    /// this check meaningful rather than a name match.
+    ///
+    /// Views are out of scope entirely — there `.UserName` is the input model,
+    /// covered by the IdentityUser construction test instead.
     /// </summary>
     [Fact]
     public void Identity_username_property_is_only_touched_by_the_conventions_class()
@@ -166,10 +193,10 @@ public class GenerationTests(TemplateFixture fixture)
             .Where(f => f.EndsWith(".cs"))
             .Where(f => !f.EndsWith("AccountIdentityConventions.cs", StringComparison.Ordinal))
             .Where(f => !f.Contains("/Migrations/", StringComparison.Ordinal))
-            // Input models DECLARE a UserName property; that is the field the
-            // user fills in, not Identity's.
-            .Where(f => !f.Contains("/Models/Account/", StringComparison.Ordinal))
-            .Where(f => References(StripComments(File.ReadAllText(f))))
+            .Select(f => (Path: f, Code: StripComments(File.ReadAllText(f))))
+            .Where(x => x.Code.Contains("IdentityUser", StringComparison.Ordinal))
+            .Where(x => References(x.Code))
+            .Select(x => x.Path)
             .ToList();
 
         Assert.True(offenders.Count == 0,
@@ -365,6 +392,74 @@ public class GenerationTests(TemplateFixture fixture)
 
     // Checked against the Identity output: the email sender seam only exists
     // there, since --auth none ships no email services at all.
+
+    /// <summary>
+    /// Every editor template must be reachable from the gallery model, or it is
+    /// rendered by no test and can break silently.
+    ///
+    /// Checked structurally rather than by rendering, so it fails with a useful
+    /// message the moment a file is added without a matching property.
+    /// </summary>
+    [Fact]
+    public void Every_editor_template_is_covered_by_the_gallery_model()
+    {
+        var templateDirectory = Path.Combine(
+            fixture.IdentityOutput, "src", "IdentityApp", "Views", "Shared", "EditorTemplates");
+
+        var templates = Directory.GetFiles(templateDirectory, "*.cshtml")
+            .Select(Path.GetFileNameWithoutExtension)
+            .ToList();
+
+        var sampleModel = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("EditorSampleModel.cs", StringComparison.Ordinal)));
+
+        // A template is covered either by a [UIHint] naming it, or by a property
+        // whose type resolves to it. Type-name templates are named after the CLR
+        // type, which is not what appears in C# source, so those are mapped.
+        var clrTypeAliases = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Boolean"] = "bool",
+            ["Int32"] = "int",
+            ["Decimal"] = "decimal",
+            ["String"] = "string",
+            ["Enum"] = "SampleStatus"
+        };
+
+        var uncovered = templates
+            .Where(name =>
+            {
+                var needle = clrTypeAliases.TryGetValue(name!, out var alias) ? alias : name!;
+                return !sampleModel.Contains(needle, StringComparison.Ordinal);
+            })
+            .ToList();
+
+        Assert.True(uncovered.Count == 0,
+            "These editor templates are not reachable from EditorSampleModel, so no test renders them:\n"
+            + string.Join("\n", uncovered)
+            + "\n\nAdd a property for each, and list its field name in EditorTemplateTests.ExpectedFields.");
+    }
+
+
+    /// <summary>
+    /// The scoping above would be a loophole if the controllers stopped naming
+    /// IdentityUser while still reaching Identity through some other route, so
+    /// this pins the shape the seam depends on: the account controller works
+    /// through UserManager and SignInManager and never constructs or inspects a
+    /// user itself.
+    /// </summary>
+    [Fact]
+    public void Account_controller_goes_through_the_conventions_class()
+    {
+        var controller = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("Controllers/AccountController.cs", StringComparison.Ordinal)));
+
+        var code = StripComments(controller);
+
+        Assert.Contains("AccountIdentityConventions", code);
+        Assert.DoesNotContain("new IdentityUser", code);
+        Assert.DoesNotContain(".UserName", code);
+    }
+
     [Theory]
     [InlineData("SEAM: database provider")]
     [InlineData("SEAM: username identity")]

@@ -1,0 +1,23 @@
+@* Resolved by [DataType(DataType.PhoneNumber)]. *@
+@model string
+@{
+    var meta = ViewData.ModelMetadata;
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <div class="input-group">
+        <span class="input-group-text">Tel</span>
+        <input asp-for="@Model" type="tel" class="form-control" placeholder="@meta.Placeholder" autocomplete="tel" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

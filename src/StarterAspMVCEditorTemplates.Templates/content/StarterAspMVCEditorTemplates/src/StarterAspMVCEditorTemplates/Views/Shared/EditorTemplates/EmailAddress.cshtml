@@ -1,35 +1,25 @@
-@model string
-
 @*
-    Fires on: [DataType(DataType.EmailAddress)].
-    MVC resolves scalar editors from the DataType before falling back to the
-    type name, so no [UIHint] is needed. See documentation/editor-templates.md.
-
-    Uses Html.*For helpers rather than asp-for tag helpers. In an editor template
-    the model IS the field, and there is no property to point a tag helper at --
-    asp-for needs an expression like m.Email, which does not exist here. The
-    helpers below read the field name from ViewData.TemplateInfo, so the
-    generated name and id stay correct however deeply the template is nested.
+    Resolved by [DataType(DataType.EmailAddress)].
+    autocomplete="email" lets password managers and browsers fill it.
 *@
-
+@model string
 @{
-    var fieldName = ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
-    var errorId = $"{fieldName.Replace('.', '_').Replace('[', '_').Replace(']', '_')}_error";
-    var invalid = ViewData.ModelState.GetFieldValidationState(fieldName)
-        == Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid;
+    var meta = ViewData.ModelMetadata;
 }
-
 <div class="mb-3">
-    @Html.LabelFor(m => m, new { @class = "form-label" })
-    @Html.TextBoxFor(m => m, new
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <input asp-for="@Model" type="email" class="form-control"
+           autocomplete="email" inputmode="email" spellcheck="false"
+           placeholder="@(meta.Placeholder ?? "name@example.com")" />
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
     {
-        @class = "form-control" + (invalid ? " is-invalid" : ""),
-        type = "email",
-        autocomplete = "email",
-        inputmode = "email",
-        spellcheck = "false",
-        placeholder = "name@example.com",
-        aria_describedby = errorId
-    })
-    @Html.ValidationMessageFor(m => m, null, new { id = errorId, @class = "invalid-feedback d-block" })
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
 </div>

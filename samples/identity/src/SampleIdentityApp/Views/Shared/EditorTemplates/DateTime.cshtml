@@ -1,0 +1,24 @@
+@*
+    Resolved on the type name for DateTime properties.
+    asp-format is required: without it the value is written in the current
+    culture's format and <input type="datetime-local"> silently ignores it.
+*@
+@model DateTime
+@{
+    var meta = ViewData.ModelMetadata;
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <input asp-for="@Model" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" />
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

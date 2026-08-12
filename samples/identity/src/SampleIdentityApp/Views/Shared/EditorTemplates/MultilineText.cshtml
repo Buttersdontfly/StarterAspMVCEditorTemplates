@@ -1,0 +1,24 @@
+@*
+    Resolved by [DataType(DataType.MultilineText)].
+    Pass rows through additionalViewData: Html.EditorFor(m => m.Bio, new { rows = 8 })
+*@
+@model string
+@{
+    var meta = ViewData.ModelMetadata;
+    var rows = ViewData["rows"] as int? ?? 4;
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <textarea asp-for="@Model" class="form-control" rows="@rows" placeholder="@meta.Placeholder"></textarea>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>
