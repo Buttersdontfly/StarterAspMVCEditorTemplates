@@ -71,11 +71,14 @@ if ($constructors) {
     Write-Failure 'IdentityUser is constructed outside AccountIdentityConventions.cs. Route it through CreateUser.'
 }
 
+# Scoped to files that actually work with Identity types. "UserName" is an
+# ordinary property name that view models and sample data use too, so an
+# unscoped match fires on things that are not seam violations at all.
 $propertyUses = $seamCandidates |
     Where-Object { $_.Extension -eq '.cs' } |
-    Where-Object { $_.FullName -notmatch '[\\/]Models[\\/]Account[\\/]' } |
     Where-Object {
-        (Remove-Comments (Get-Content $_.FullName -Raw)) -match '\.UserName\b|\bUserName\s*=[^=]'
+        $code = Remove-Comments (Get-Content $_.FullName -Raw)
+        $code -match 'IdentityUser' -and $code -match '\.UserName\b|\bUserName\s*=[^=]'
     }
 
 if ($propertyUses) {

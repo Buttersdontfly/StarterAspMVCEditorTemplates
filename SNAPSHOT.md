@@ -2,8 +2,8 @@
 
 This file identifies which delivered snapshot of the repository you have.
 
-    Snapshot:       2026-08-12T23:24:05Z
-    Expected tests: 80
+    Snapshot:       2026-08-12T23:32:34Z
+    Expected tests: 81
 
 If `dotnet test tests/StarterAspMVCEditorTemplates.TemplateTests` reports a
 different number of tests than the figure above, you are running an older
@@ -11,6 +11,8 @@ snapshot and any fix discussed since then is not in your working copy.
 
 ## Included in this snapshot
 
+- Seam check scoped to files that use IdentityUser; the gallery's sample model
+  has an ordinary UserName property and was a false positive.
 - 20 new editor templates added, existing 5 harmonised to the same house style.
 - New: Models/EditorSampleModel.cs, Models/LineItem.cs, wwwroot/js/editor-templates.js.
 - documentation/editor-templates.md rewritten as a full guide.

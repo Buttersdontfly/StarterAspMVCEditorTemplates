@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SampleIdentityApp.Data;
+using StarterAspMVCEditorTemplates.Data;
 
 #nullable disable
 
-namespace SampleIdentityApp.Migrations
+namespace StarterAspMVCEditorTemplates.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260812232725_Initial")]
+    [Migration("20260812234246_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

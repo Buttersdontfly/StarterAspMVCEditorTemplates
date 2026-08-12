@@ -556,3 +556,17 @@ auth option by name.
 `Test-XmlWellFormed.ps1` catches it before any pack, and now reports the file and
 line rather than dumping the whole document into the error. Use an em dash for
 punctuation, and name flags without the leading dashes inside XML comments.
+
+## The seam check is scoped to files that use Identity
+
+`UserName` is an ordinary property name. The gallery's sample model has one, and
+sets `UserName = "ada"` on itself -- which is not a seam violation, but an
+unscoped text match flagged it.
+
+Both the test and `Lint-Generated.ps1` now require a file to mention
+`IdentityUser` before its `UserName` usage counts. A file that never names the
+Identity type cannot be touching Identity's property.
+
+To stop the scoping becoming a loophole, a second test pins the shape the seam
+relies on: `AccountController` references `AccountIdentityConventions`, never
+constructs an `IdentityUser`, and never reads `.UserName`.
