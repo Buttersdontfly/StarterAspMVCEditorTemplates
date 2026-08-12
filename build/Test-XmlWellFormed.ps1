@@ -30,23 +30,44 @@ $failures = @()
 foreach ($file in $files) {
     $relative = $file.FullName.Substring($repo.Length + 1)
     try {
-        [xml](Get-Content $file.FullName -Raw) | Out-Null
+        # XmlDocument.Load rather than the [xml] cast: on failure the cast puts
+        # the entire file contents into the exception message, which buries the
+        # one line that matters under a screenful of noise.
+        $document = New-Object System.Xml.XmlDocument
+        $document.Load($file.FullName)
         Write-Host "  OK    $relative" -ForegroundColor DarkGray
     }
     catch {
-        $failures += [pscustomobject]@{ Path = $relative; Message = $_.Exception.Message }
+        $inner = $_.Exception
+        while ($inner.InnerException) { $inner = $inner.InnerException }
+
+        $line = if ($inner -is [System.Xml.XmlException]) { $inner.LineNumber } else { 0 }
+        $failures += [pscustomobject]@{
+            Path    = $relative
+            Line    = $line
+            Message = $inner.Message
+        }
+
         Write-Host "  FAIL  $relative" -ForegroundColor Red
+        if ($line -gt 0) {
+            # Show the offending line, which is almost always enough to see it.
+            $text = Get-Content $file.FullName
+            if ($line -le $text.Count) {
+                Write-Host ("        line {0}: {1}" -f $line, $text[$line - 1].Trim()) -ForegroundColor Yellow
+            }
+        }
     }
 }
 
 if ($failures.Count -gt 0) {
     Write-Host ''
     foreach ($failure in $failures) {
-        Write-Host "::error file=$($failure.Path)::$($failure.Message)" -ForegroundColor Red
+        $location = if ($failure.Line -gt 0) { ",line=$($failure.Line)" } else { '' }
+        Write-Host "::error file=$($failure.Path)$location::$($failure.Message)" -ForegroundColor Red
     }
     Write-Host ''
     Write-Host "$($failures.Count) malformed XML file(s)." -ForegroundColor Red
-    Write-Host "If the message mentions '--', an XML comment contains a double hyphen. Use an em dash or rephrase." -ForegroundColor Yellow
+    Write-Host "If the message mentions '--', an XML comment contains a double hyphen, which XML does not allow. Use an em dash or rephrase. Writing a command-line flag such as the auth option inside a comment is the usual cause." -ForegroundColor Yellow
     exit 1
 }
 

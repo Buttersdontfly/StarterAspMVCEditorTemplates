@@ -22,11 +22,8 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        @if (Context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
-                        {
-                            <li class="nav-item"><a class="nav-link" href="/dev/editors">Editor templates</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/dev/mailbox">Mailbox</a></li>
-                        }
+                        @* Present only when the dev pages are. See _DevNavPartial. *@
+                        <partial name="_DevNavPartial" optional="true" />
                     </ul>
                     @* optional="true" means this renders only when the partial
                        exists, which is how the layout stays free of template

@@ -92,8 +92,15 @@
             "src/StarterAspMVCEditorTemplates/Models/Account/**",
             "src/StarterAspMVCEditorTemplates/Identity/**",
             "src/StarterAspMVCEditorTemplates/Data/SeedData.cs",
-            "src/StarterAspMVCEditorTemplates/Services/IdentityEmailSenderAdapter.cs",
-            "src/StarterAspMVCEditorTemplates/Migrations/**"
+            "src/StarterAspMVCEditorTemplates/Services/**",
+            "src/StarterAspMVCEditorTemplates/Controllers/DevController.cs",
+            "src/StarterAspMVCEditorTemplates/Views/Dev/**",
+            "src/StarterAspMVCEditorTemplates/Views/Shared/_DevNavPartial.cshtml",
+            "src/StarterAspMVCEditorTemplates/Views/Home/_DevCards.cshtml",
+            "src/StarterAspMVCEditorTemplates/Migrations/**",
+            "tests/StarterAspMVCEditorTemplates.Tests/AccountFlowTests.cs",
+            "tests/StarterAspMVCEditorTemplates.Tests/EditorTemplateTests.cs",
+            "tests/StarterAspMVCEditorTemplates.Tests/HtmlPage.cs"
           ]
         },
         {

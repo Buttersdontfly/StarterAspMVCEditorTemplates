@@ -2,8 +2,8 @@
 
 This file identifies which delivered snapshot of the repository you have.
 
-    Snapshot:       2026-08-11T09:41:02Z
-    Expected tests: 45
+    Snapshot:       2026-08-12T22:27:41Z
+    Expected tests: 61
 
 If `dotnet test tests/StarterAspMVCEditorTemplates.TemplateTests` reports a
 different number of tests than the figure above, you are running an older
@@ -11,6 +11,19 @@ snapshot and any fix discussed since then is not in your working copy.
 
 ## Included in this snapshot
 
+- Fixed illegal `--` in two XML comments; Test-XmlWellFormed now reports the
+  offending line instead of the whole file.
+- --auth none no longer ships dev pages or email services; layout and home page
+  reach them through optional partials.
+- SQLite upgraded to the 3.x bundle (SQLitePCLRaw.bundle_e_sqlite3 3.0.5),
+  clearing the CVE-2025-6965 audit warning.
+- EF Design package no longer emits BuildHost-net472 / BuildHost-netcore.
+- SeedData is now idempotent under concurrent startup. Parallel test classes
+  both created the Admin role and the loser hit a UNIQUE constraint failure.
+- Test-TemplatePaths.ps1: `**` is not a globstar in PowerShell, so `tests/**`
+  reported zero matches. It now recurses from the base directory.
+- All build/Test-*.ps1 now `exit 0` explicitly; callers reset $LASTEXITCODE.
+  Fixes CI failing right after reporting that every check passed.
 - CI rewritten: golden-samples check now detects untracked files, fetch-depth 0
   everywhere for MinVer, node reuse off, Initialize-Repo in every packing job.
 - publish.yml refuses to publish without migrations and vendored assets.

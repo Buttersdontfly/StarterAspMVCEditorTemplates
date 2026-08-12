@@ -62,6 +62,10 @@ exactly what the seam exists to make easy.
 
 ## SEAM: email sender
 
+Ships with `--auth identity` only. Without the account flows nothing sends mail,
+so the sender, the mailbox page and their tests would all be dead code; add an
+`IAppEmailSender` of your own when your app needs to send something.
+
 `Services/DevConsoleEmailSender.cs` implements `IAppEmailSender`, which is
 adapted onto Identity's `IEmailSender<TUser>`.
 

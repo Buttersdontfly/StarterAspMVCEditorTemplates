@@ -55,18 +55,22 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
 
     <!--
-      Known audit finding: Microsoft.EntityFrameworkCore.Sqlite pulls
-      SQLitePCLRaw.lib.e_sqlite3, whose bundled native SQLite is flagged by
-      CVE-2025-6965 (GHSA-2m69-gcr7-jv3q). It is an upstream issue with no fixed
-      2.1.x release; see dotnet/efcore#38257.
+      SQLite native library, pinned ahead of what EF Core resolves.
 
-      If your organisation requires a clean audit, you can force the newer
-      native bundle by uncommenting the line below. Note that this creates a
-      version skew between the managed and native halves of SQLitePCLRaw, so
-      verify your database actually works afterwards, and remove the pin once
-      EF Core ships a version that resolves a non-vulnerable bundle.
+      Microsoft.EntityFrameworkCore.Sqlite pulls SQLitePCLRaw 2.1.x, whose
+      bundled native SQLite is flagged by CVE-2025-6965 (GHSA-2m69-gcr7-jv3q).
+      There is no fixed 2.1.x release, so the audit warning cannot be cleared by
+      waiting; see dotnet/efcore#38257.
+
+      Referencing the 3.x bundle upgrades the whole family together — managed
+      core, provider, config and the native build — rather than pinning only the
+      native half, which would leave the managed and native versions mismatched.
+
+      Remove this once EF Core resolves a non-vulnerable bundle on its own. To
+      check what is actually in use:
+          dotnet list package —include-transitive
     -->
-    <!-- <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" /> -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <!-- <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" /> -->
     <!-- <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" /> -->
   </ItemGroup>

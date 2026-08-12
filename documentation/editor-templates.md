@@ -34,6 +34,12 @@ to get right here.
 ## Adding one
 
 1. Add `Views/Shared/EditorTemplates/YourThing.cshtml`.
-2. Register it in the `/dev/editors` kitchen sink page.
-3. Run the tests. If you skipped step 2, L5 fails — that is intentional, and is
-   what stops editor-template coverage rotting as the template grows.
+2. Register it in the `/dev/editors` gallery.
+3. Run the tests. If you skipped step 2, the field-name assertion in
+   `EditorTemplateTests` fails — that is intentional, and is what stops
+   editor-template coverage rotting as the template grows.
+
+Note that `/dev/editors` and its tests ship only with `--auth identity`. With
+`--auth none` the editor templates are still there and still work; what is
+missing is the gallery, the fake email sender and the mailbox, since without the
+account flows nothing renders or sends through them.

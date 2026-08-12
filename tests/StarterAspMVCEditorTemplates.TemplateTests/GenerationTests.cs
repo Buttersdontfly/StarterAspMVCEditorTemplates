@@ -26,6 +26,13 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Shared/_LoginPartial.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/UserName.cshtml")]
     [InlineData("Services/IdentityEmailSenderAdapter.cs")]
+    [InlineData("Services/IAppEmailSender.cs")]
+    [InlineData("Services/DevConsoleEmailSender.cs")]
+    [InlineData("Controllers/DevController.cs")]
+    [InlineData("Views/Dev/Editors.cshtml")]
+    [InlineData("Views/Dev/Mailbox.cshtml")]
+    [InlineData("Views/Shared/_DevNavPartial.cshtml")]
+    [InlineData("Views/Home/_DevCards.cshtml")]
     [InlineData("Migrations")]
     public void Identity_only_files_are_present_with_identity(string relativePath)
     {
@@ -40,7 +47,11 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Account/")]
     [InlineData("Views/Shared/_LoginPartial.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/UserName.cshtml")]
-    [InlineData("Services/IdentityEmailSenderAdapter.cs")]
+    [InlineData("Services/")]
+    [InlineData("Controllers/DevController.cs")]
+    [InlineData("Views/Dev/")]
+    [InlineData("Views/Shared/_DevNavPartial.cshtml")]
+    [InlineData("Views/Home/_DevCards.cshtml")]
     [InlineData("Migrations/")]
     public void Identity_only_files_are_absent_without_identity(string relativePath)
     {
@@ -57,9 +68,9 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("Views/Shared/EditorTemplates/Password.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/AddressInputModel.cshtml")]
     [InlineData("Views/Shared/EditorTemplates/PersonNameInputModel.cshtml")]
-    [InlineData("Controllers/DevController.cs")]
     [InlineData("Data/AppDbContext.cs")]
-    [InlineData("Services/DevConsoleEmailSender.cs")]
+    [InlineData("Controllers/HomeController.cs")]
+    [InlineData("Views/Shared/_Layout.cshtml")]
     public void Shared_files_are_present_in_both_combos(string relativePath)
     {
         Assert.Contains(Files(fixture.IdentityOutput), f => f.Contains(relativePath, StringComparison.Ordinal));
@@ -205,6 +216,9 @@ public class GenerationTests(TemplateFixture fixture)
     [InlineData("AccountIdentityConventions")]
     [InlineData("SeedData")]
     [InlineData("IdentityEmailSenderAdapter")]
+    [InlineData("IAppEmailSender")]
+    [InlineData("DevConsoleEmailSender")]
+    [InlineData("EditorGalleryModel")]
     public void Plain_combo_never_references_identity_only_code(string identityOnlyReference)
     {
         // sourceName has been replaced by now, so match on the tail of the
@@ -325,6 +339,32 @@ public class GenerationTests(TemplateFixture fixture)
         Assert.Contains("static readonly bool SignInWithEmail", conventions);
     }
 
+
+    /// <summary>
+    /// The plain combo must not link to pages it does not have.
+    ///
+    /// A dead link compiles perfectly well and only shows up as a 404 when
+    /// somebody clicks it, so nothing else in this suite would catch it. The
+    /// layout and home page reach the dev pages through optional partials, which
+    /// is what makes whole-file exclusion enough here.
+    /// </summary>
+    [Theory]
+    [InlineData("/dev/editors")]
+    [InlineData("/dev/mailbox")]
+    public void Plain_combo_has_no_links_to_dev_pages(string url)
+    {
+        var offenders = Files(fixture.PlainOutput)
+            .Where(f => f.EndsWith(".cshtml"))
+            .Where(f => StripComments(File.ReadAllText(f)).Contains(url, StringComparison.Ordinal))
+            .ToList();
+
+        Assert.True(offenders.Count == 0,
+            $"--auth none output links to '{url}', which that combo does not serve:\n"
+            + string.Join("\n", offenders));
+    }
+
+    // Checked against the Identity output: the email sender seam only exists
+    // there, since --auth none ships no email services at all.
     [Theory]
     [InlineData("SEAM: database provider")]
     [InlineData("SEAM: username identity")]

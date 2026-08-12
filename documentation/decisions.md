@@ -429,3 +429,130 @@ A few choices in `ci.yml` that are not obvious:
 
 `publish.yml` refuses to publish if either is missing. That check is worth the
 seconds: a nuget.org version cannot be replaced, only unlisted.
+
+## Check scripts exit explicitly
+
+Every `build/Test-*.ps1` ends with `exit 0`.
+
+A PowerShell script that simply runs off the end does not set `$LASTEXITCODE`.
+The caller then reads whatever the last native command left behind, which may be
+a failure from something completely unrelated. `Initialize-Repo.ps1` reported
+"Build scripts have syntax errors" in CI immediately after printing that all 13
+scripts parsed cleanly -- the check had passed and the exit code was stale.
+
+This is the worst shape of bug: it passes locally, where the preceding exit code
+happens to be 0, and fails on a fresh runner where it does not.
+
+Two defences. Each check script exits explicitly, and every caller sets
+`$global:LASTEXITCODE = 0` before invoking one. `Test-PowerShellSyntax.ps1` also
+fails if any sibling `Test-*.ps1` lacks a trailing `exit 0`, so a new check
+script cannot reintroduce it.
+
+## `**` is not a globstar in PowerShell
+
+`Test-TemplatePaths.ps1` resolves a `/**` pattern by recursing from the base
+directory, not by passing the wildcard to `Get-ChildItem`.
+
+PowerShell treats `**` as an ordinary single-level wildcard. `Get-ChildItem
+-Path 'tests/**' -File -Recurse` therefore matched only the directory directly
+beneath `tests/`, and `-File` discarded it -- reporting zero matches for a
+directory containing six files.
+
+What made it hard to spot: every other `/**` exclude in `template.json` points at
+a directory whose direct children are files, and those resolved correctly.
+`tests/**` is the only one whose direct child is a directory, so it was the only
+pattern that failed.
+
+The original checker was Python, where the equivalent glob is recursive, and it
+passed. The bug arrived with the PowerShell port and survived because nothing
+local runs this script -- `Install-TemplateLocally.ps1` calls the XML and C#
+checks but not this one. CI was the first thing ever to execute it.
+
+## Seeding must survive losing a race
+
+`SeedData.SeedAsync` treats "another process created it first" as success rather
+than as an error, at every step.
+
+The original was a plain check-then-act: `if (!await RoleExistsAsync) CreateAsync`.
+Two instances can both see the role missing and both insert, and the loser dies
+with `UNIQUE constraint failed: AspNetRoles.NormalizedName`. CI found this
+because xUnit runs test classes in parallel, so several
+`WebApplicationFactory` instances start against the same database at once -- but
+it is not a test-only problem. A developer running the app while its tests run,
+or any two instances sharing a database, hits exactly the same thing.
+
+Migrations need no equivalent handling: EF Core takes its own exclusive lock
+while applying them, visible in the startup log as "Acquiring an exclusive lock
+for migration application". An earlier version of this fix added a named mutex
+around both, which was redundant for migrations, brought `Global\` naming
+concerns on Unix, and cluttered a file users read.
+
+The duplicate check matches on message text rather than a provider-specific
+exception type, so it keeps working after the database provider is swapped.
+
+Separately, `TestWebAppFactory` gives each test class its own SQLite file. The
+app is safe under concurrent startup either way; separate files keep the tests
+independent of each other's data as well.
+
+## SQLite is pinned to the 3.x bundle
+
+`Directory.Build.props` references `SQLitePCLRaw.bundle_e_sqlite3` 3.0.5
+explicitly, ahead of the 2.1.x that `Microsoft.EntityFrameworkCore.Sqlite`
+resolves on its own.
+
+That 2.1.x native build is flagged by CVE-2025-6965 (GHSA-2m69-gcr7-jv3q), and
+no fixed 2.1.x release exists, so the audit warning cannot be cleared by waiting.
+Referencing the bundle rather than `SQLitePCLRaw.lib.e_sqlite3` upgrades the
+managed core, provider, config and native build together; pinning only the native
+half leaves the managed and native versions mismatched.
+
+**Not a floating version.** `3.*` would defeat the offline story: the template
+sets `RestorePackagesWithLockFile`, whose whole purpose is that a restore
+resolves to the same versions every time and can be served from the local cache.
+A floating version reintroduces a resolution step that needs the network and can
+change under you between machines. Bump the number deliberately instead, and let
+CI verify the bump.
+
+## `contentfiles` is omitted from the EF Design package
+
+With the default asset list, EF Core 10's Design package drops
+`BuildHost-net472` and `BuildHost-netcore` folders into the project. They appear
+in Solution Explorer and can block a clean with "file in use". They are
+build-time infrastructure rather than project content, so `contentfiles` is
+dropped from `IncludeAssets` while the rest of the default list is kept and
+`dotnet ef` still works. See dotnet/efcore#36970. The generated `.gitignore`
+lists both folders as well, in case other tooling recreates them.
+
+## `--auth none` ships no dev pages and no email services
+
+With `--auth none` the generated project excludes `Services/**`,
+`Controllers/DevController.cs`, `Views/Dev/**`, and the account-flow and
+editor-gallery tests.
+
+Without the account flows nothing sends mail and nothing renders the gallery, so
+the sender, the mailbox and their tests were all dead code -- the mailbox page in
+particular could never show a message. The editor templates themselves still
+ship and still work; what goes is the scaffolding around them.
+
+Two consequences worth noting:
+
+- The shared `_Layout.cshtml` and `Views/Home/Index.cshtml` reach the dev pages
+  through `<partial optional="true" />` rather than conditionals, so no shared
+  view needs template syntax. Same technique as `_LoginPartial`.
+- `AngleSharp` is now a conditional `PackageReference`, since only the excluded
+  tests use it. That also removes its audit warning from the plain combo.
+
+`GenerationTests` gained a check that the plain combo contains no links to
+`/dev/editors` or `/dev/mailbox`. A dead link compiles fine and only shows up as
+a 404 when somebody clicks it, so nothing else in the suite would catch it.
+
+## Writing CLI flags in XML comments
+
+`--` is illegal inside an XML comment, which makes writing a double-dash
+command-line flag in a comment inside `.props` or `.csproj` a build break. It has
+happened twice here: once with `--` used as an em dash, and once writing the
+auth option by name.
+
+`Test-XmlWellFormed.ps1` catches it before any pack, and now reports the file and
+line rather than dumping the whole document into the error. Use an em dash for
+punctuation, and name flags without the leading dashes inside XML comments.

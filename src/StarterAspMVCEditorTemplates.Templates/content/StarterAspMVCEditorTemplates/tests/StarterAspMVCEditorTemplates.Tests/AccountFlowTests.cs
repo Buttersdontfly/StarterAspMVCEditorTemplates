@@ -1,4 +1,3 @@
-#if (UseIdentity)
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -206,4 +205,3 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
         return System.Net.WebUtility.HtmlDecode(match.Groups[1].Value);
     }
 }
-#endif

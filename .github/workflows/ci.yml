@@ -11,6 +11,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Note on the "Node.js 20 actions are deprecated" warning: it is cosmetic and
+# does not fail the run. The runner records an action as node20 from its declared
+# version, then upgrades the runtime to node24 anyway, and the end-of-job summary
+# reports the stale list. Nothing to fix on this side beyond keeping the actions
+# on their latest major versions.
+
 env:
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true

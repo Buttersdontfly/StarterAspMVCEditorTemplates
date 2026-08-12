@@ -9,7 +9,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageReference Include="AngleSharp" Version="1.3.0" />
+    <!-- Used only by the account-flow and editor-gallery tests, which are
+         excluded with —auth none. -->
+    <PackageReference Include="AngleSharp" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup>

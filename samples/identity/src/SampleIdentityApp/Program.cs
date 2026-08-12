@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SampleIdentityApp.Data;
-using SampleIdentityApp.Services;
 using Microsoft.AspNetCore.Identity;
+using SampleIdentityApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +29,10 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connect
 // The development sender writes to the console, to .eml files under
 // App_Data/mail/, and to the /dev/mailbox page. Replace this single
 // registration with an SMTP or transactional-email implementation.
+//
+// Included only with Identity: without the account flows nothing sends mail, so
+// the sender, the mailbox page and their tests would all be dead code. Add an
+// IAppEmailSender of your own when your app needs to send something.
 builder.Services.AddSingleton<IAppEmailSender, DevConsoleEmailSender>();
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -89,7 +93,13 @@ if (app.Environment.IsDevelopment())
             """);
     }
 
+    // EF Core takes its own exclusive lock while applying migrations, so
+    // concurrent startups are safe here without extra coordination.
     await db.Database.MigrateAsync();
+    // Seeding is "check, then insert", which DOES race: two instances can both
+    // find the Admin role missing and both try to create it, and the loser gets
+    // `UNIQUE constraint failed`. SeedAsync is written to treat "someone else
+    // created it first" as success, so this is safe to call concurrently.
     await SeedData.SeedAsync(scope.ServiceProvider);
 }
 else

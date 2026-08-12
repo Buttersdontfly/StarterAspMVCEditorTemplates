@@ -4,9 +4,19 @@
        setting all live in ../../Directory.Build.props. -->
 
   <ItemGroup>
+    <!--
+      contentfiles is deliberately omitted from IncludeAssets.
+
+      With it, EF Core 10's Design package drops BuildHost-net472 and
+      BuildHost-netcore folders into the project, where they show up in Solution
+      Explorer and can block a clean with "file in use". They are build-time
+      infrastructure, not project content. See dotnet/efcore#36970.
+
+      The rest of the default asset list is kept, so `dotnet ef` still works.
+    -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 <!--#if (UseIdentity) -->
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />

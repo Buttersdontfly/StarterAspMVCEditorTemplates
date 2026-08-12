@@ -4,3 +4,9 @@ App_Data/
 *.db
 *.db-shm
 *.db-wal
+
+# EF Core 10 build-time infrastructure. The csproj already omits contentfiles
+# from the Design package so these should not appear, but other tooling can
+# still create them.
+BuildHost-net472/
+BuildHost-netcore/

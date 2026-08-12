@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using SamplePlainApp.Data;
-using SamplePlainApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,11 +23,6 @@ var connectionString = SqliteDatabasePath.Resolve(
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 
-// SEAM: email sender.
-// The development sender writes to the console, to .eml files under
-// App_Data/mail/, and to the /dev/mailbox page. Replace this single
-// registration with an SMTP or transactional-email implementation.
-builder.Services.AddSingleton<IAppEmailSender, DevConsoleEmailSender>();
 
 
 var app = builder.Build();
@@ -41,6 +35,8 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 
+    // EF Core takes its own exclusive lock while applying migrations, so
+    // concurrent startups are safe here without extra coordination.
     await db.Database.MigrateAsync();
 }
 else

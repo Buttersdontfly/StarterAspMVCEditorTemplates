@@ -15,9 +15,17 @@ namespace SampleIdentityApp.Tests;
 ///    the /dev pages are all Development-only, so a test run in any other
 ///    environment gets an empty database and 404s.
 ///
-/// 2. Each factory gets its own database file. Tests that share one file
-///    interfere through the seeded user and any accounts they create, and the
-///    failures look like flakiness rather than shared state.
+/// 2. Each factory gets its own database file. xUnit runs test classes in
+///    parallel, so a shared file means several instances migrating and seeding
+///    the same database at once -- which surfaces as
+///    `UNIQUE constraint failed: AspNetRoles.NormalizedName` from whichever
+///    instance loses. Tests would also interfere through the seeded user and any
+///    accounts they create, and both failure modes read as flakiness rather than
+///    as shared state.
+///
+///    The app itself is safe under concurrent startup regardless (see the mutex
+///    in Program.cs and the idempotent seeder); a separate file per factory keeps
+///    the tests independent as well as passing.
 /// </summary>
 public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IDisposable
 {
