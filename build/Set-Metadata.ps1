@@ -154,6 +154,7 @@ if ($remaining) {
 
 # Self-check: this script edits MSBuild files, so it verifies its own output
 # rather than leaving a broken build for the next command to discover.
+$global:LASTEXITCODE = 0
 & (Join-Path $PSScriptRoot 'Test-XmlWellFormed.ps1') | Out-Null
 if ($LASTEXITCODE -ne 0) {
     & (Join-Path $PSScriptRoot 'Test-XmlWellFormed.ps1')

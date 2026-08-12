@@ -31,6 +31,9 @@ $repo = Split-Path $PSScriptRoot -Parent
 $content = Join-Path $repo 'src/StarterAspMVCEditorTemplates.Templates/content/StarterAspMVCEditorTemplates/src/StarterAspMVCEditorTemplates'
 
 Write-Host 'Checking build scripts parse...' -ForegroundColor Cyan
+# Reset first: $LASTEXITCODE persists from earlier native commands, so reading it
+# without clearing it can report a failure that belongs to something else.
+$global:LASTEXITCODE = 0
 & (Join-Path $PSScriptRoot 'Test-PowerShellSyntax.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'Build scripts have syntax errors. Fix those first.' }
 

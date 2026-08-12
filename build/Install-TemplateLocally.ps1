@@ -54,6 +54,7 @@ try {
     # --- 2. Pack with a unique version --------------------------------------
     # Validate XML first: a malformed .props fails the pack with an error that
     # points at Microsoft.Common.props instead of at the file you broke.
+    $global:LASTEXITCODE = 0
     & (Join-Path $PSScriptRoot 'Test-XmlWellFormed.ps1')
     if ($LASTEXITCODE -ne 0) {
         throw 'Malformed XML in the repo. Fix the files listed above before packing.'
@@ -61,6 +62,7 @@ try {
 
     # Syntax-check the C# too. Catching it here beats finding out after pack,
     # install, generate and build.
+    $global:LASTEXITCODE = 0
     & (Join-Path $PSScriptRoot 'Test-CSharpSyntax.ps1')
     if ($LASTEXITCODE -ne 0) {
         throw 'Syntax errors in template source. Fix the files listed above before packing.'

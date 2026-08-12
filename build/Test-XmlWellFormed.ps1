@@ -51,3 +51,12 @@ if ($failures.Count -gt 0) {
 }
 
 Write-Host "All $($files.Count) XML files are well-formed." -ForegroundColor Green
+
+# Explicit success exit code, not optional.
+#
+# A PowerShell script that simply ends does NOT set $LASTEXITCODE -- the caller
+# reads whatever the last native command left behind, which may be a failure
+# from something entirely unrelated. That made every caller of this script
+# unreliable: it passed locally where the previous exit code happened to be 0,
+# and failed in CI where it did not.
+exit 0
