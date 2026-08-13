@@ -15,8 +15,18 @@ name: Publish
 # failure, and so the pipeline can be exercised without burning a version. It is
 # gated by the same environment, so it grants no extra access.
 on:
+  # Pushing a v* tag publishes. This is the trigger most people expect, and the
+  # nuget-release environment is what keeps it deliberate: add a required
+  # reviewer there and every push waits for approval regardless of trigger.
+  push:
+    tags: [ 'v*' ]
+
+  # Publishing a GitHub Release also publishes, for a release-notes-first flow.
+  # Both are safe together: the push uses --skip-duplicate, so whichever runs
+  # second finds the version already there and does nothing.
   release:
     types: [ published ]
+
   workflow_dispatch:
     inputs:
       dry_run:
@@ -88,14 +98,14 @@ jobs:
       # hour. Skipped on a dry run, which needs no credentials at all -- useful
       # for testing the pipeline before the trusted publishing policy exists.
       - name: NuGet login (OIDC to short-lived API key)
-        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run == false }}
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}   # nuget.org profile name, NOT the email
 
       - name: Push
-        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run == false }}
         run: >
           dotnet nuget push ./artifacts/*.nupkg
           --source https://api.nuget.org/v3/index.json
