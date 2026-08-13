@@ -2,7 +2,7 @@
 
 This file identifies which delivered snapshot of the repository you have.
 
-    Snapshot:       2026-08-12T23:32:34Z
+    Snapshot:       2026-08-12T23:49:20Z
     Expected tests: 81
 
 If `dotnet test tests/StarterAspMVCEditorTemplates.TemplateTests` reports a
@@ -11,6 +11,8 @@ snapshot and any fix discussed since then is not in your working copy.
 
 ## Included in this snapshot
 
+- data-no-post marks the Tags text box and Color swatch, which are nameless on
+  purpose; the empty-name test now respects it and asserts the converse.
 - Seam check scoped to files that use IdentityUser; the gallery's sample model
   has an ordinary UserName property and was a false positive.
 - 20 new editor templates added, existing 5 harmonised to the same house style.

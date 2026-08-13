@@ -109,19 +109,52 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     public async Task Editor_templates_never_render_an_empty_name()
     {
         // An editor template that loses the field prefix renders name="" and
-        // binds nothing. The page still looks correct, and the failure shows up
+        // binds nothing. The page still looks correct, and the failure surfaces
         // later as validation errors on data the user definitely entered.
+        //
+        // Some controls are nameless ON PURPOSE, and marked with
+        // data-no-post so the intent is stated in the markup rather than
+        // recorded as a list of exceptions here:
+        //
+        //   Tags     the visible text box must not post; only the hidden
+        //            inputs it creates carry the field name
+        //   Color    the swatch mirrors the text box, which owns the name, so
+        //            exactly one value posts
+        //
+        // Without the opt-out this test could only be satisfied by giving those
+        // controls names, which would post duplicate or junk values.
         var response = await factory.CreateClient().GetAsync("/dev/editors");
         var document = await HtmlPage.ReadAsync(response);
 
-        var unnamed = document.QuerySelectorAll("input, select")
+        var unnamed = document.QuerySelectorAll("input, select, textarea")
             .Where(e => e.GetAttribute("type") != "hidden")
+            .Where(e => !e.HasAttribute("data-no-post"))
             .Where(e => string.IsNullOrEmpty(e.GetAttribute("name")))
             .Select(e => e.OuterHtml)
             .ToList();
 
         Assert.True(unnamed.Count == 0,
-            "Inputs rendered without a name attribute:\n" + string.Join("\n", unnamed));
+            "Inputs rendered without a name attribute and without data-no-post:\n"
+            + string.Join("\n", unnamed));
+    }
+
+    [Fact]
+    public async Task Controls_marked_as_not_posting_really_do_not_post()
+    {
+        // The other half of the rule above: data-no-post is an assertion about
+        // behaviour, so anything carrying it must genuinely have no name. A
+        // control with both would post a value nobody expects.
+        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var document = await HtmlPage.ReadAsync(response);
+
+        var contradictory = document.QuerySelectorAll("[data-no-post]")
+            .Where(e => !string.IsNullOrEmpty(e.GetAttribute("name")))
+            .Select(e => e.OuterHtml)
+            .ToList();
+
+        Assert.True(contradictory.Count == 0,
+            "These are marked data-no-post but carry a name, so they will post:\n"
+            + string.Join("\n", contradictory));
     }
 
     [Fact]

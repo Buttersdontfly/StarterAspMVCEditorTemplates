@@ -179,6 +179,22 @@ and silently loses every value inside a collection.
 that `LineItems[0].Description` and `LineItems[1].Quantity` both appear. The
 failure mode is invisible in the browser, so it is worth a test.
 
+### Controls that must not post: `data-no-post`
+
+A few controls are deliberately nameless, because giving them a name would post
+a duplicate or a half-typed value:
+
+| Template | Control | Why |
+|---|---|---|
+| `Tags` | the visible text box | only the hidden inputs it creates should post |
+| `Color` | the swatch | the text box beside it owns the name, so one value posts |
+
+Mark such a control with `data-no-post`. That does two things: it states the
+intent where the markup is, and it satisfies the empty-name test without
+weakening it. A matching test asserts the reverse — anything carrying
+`data-no-post` must genuinely have no `name` — so the marker cannot be used to
+wave a real mistake through.
+
 ### Collections
 
 `@Html.EditorFor(m => m.LineItems)` renders the item template once per element

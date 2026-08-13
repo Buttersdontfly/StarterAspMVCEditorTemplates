@@ -11,7 +11,7 @@ using StarterAspMVCEditorTemplates.Data;
 namespace StarterAspMVCEditorTemplates.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260812234246_Initial")]
+    [Migration("20260812235732_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

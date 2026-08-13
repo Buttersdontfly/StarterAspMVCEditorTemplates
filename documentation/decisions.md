@@ -570,3 +570,17 @@ Identity type cannot be touching Identity's property.
 To stop the scoping becoming a loophole, a second test pins the shape the seam
 relies on: `AccountController` references `AccountIdentityConventions`, never
 constructs an `IdentityUser`, and never reads `.UserName`.
+
+## `data-no-post` marks controls that intentionally have no name
+
+`EditorTemplateTests` fails any input rendered without a `name`, because that is
+normally a template that has lost its field prefix and binds nothing -- a defect
+invisible in the browser.
+
+Two controls are nameless on purpose: the visible text box in `Tags`, and the
+swatch in `Color`. Naming either would post a duplicate or a half-typed value.
+
+Rather than keeping a list of exceptions in the test, those controls carry
+`data-no-post`, so the intent lives in the markup next to the decision. A second
+test asserts the converse -- anything carrying `data-no-post` must genuinely have
+no `name` -- so the marker cannot be used to wave through a real mistake.

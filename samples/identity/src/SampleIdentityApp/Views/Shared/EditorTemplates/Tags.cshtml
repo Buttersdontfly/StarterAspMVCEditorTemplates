@@ -23,8 +23,11 @@
                 </span>
             }
         </div>
+        @* data-no-post: this box must never carry the field name. Only the
+           hidden inputs it creates post, which is what makes the model bind to
+           List<string> rather than to whatever is half-typed. *@
         <input type="text" class="form-control form-control-sm border-0" id="@baseId"
-               data-tag-input placeholder="Type a tag and press Enter" />
+               data-tag-input data-no-post placeholder="Type a tag and press Enter" />
     </div>
     @if (!string.IsNullOrWhiteSpace(meta.Description))
     {
