@@ -1,10 +1,28 @@
 name: Publish
 
-# Publishes on a GitHub Release. MinVer derives the version from the tag,
-# so tag as v1.0.0 (or v1.0.0-beta.1 for a prerelease) and publish the release.
+# Publishes on a GitHub Release. MinVer derives the version from the tag, so tag
+# as v1.0.0 (or v1.0.0-beta.1 for a prerelease) and publish the release.
+#
+# Two things to know if this never starts:
+#
+#  1. Release-triggered workflows only run from the version of the file on the
+#     DEFAULT BRANCH. A publish.yml sitting on a feature branch is invisible to
+#     the release event, however correct it looks.
+#  2. Saving a release as a draft fires nothing. The `published` event happens
+#     when you press Publish release. Pushing the tag alone does not do it.
+#
+# workflow_dispatch is here so a release can be re-run by hand after a transient
+# failure, and so the pipeline can be exercised without burning a version. It is
+# gated by the same environment, so it grants no extra access.
 on:
   release:
     types: [ published ]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pack and verify, but do not push to nuget.org'
+        type: boolean
+        default: true
 
 env:
   DOTNET_NOLOGO: true
@@ -66,17 +84,27 @@ jobs:
           dotnet build ./verify/identity
           dotnet build ./verify/none
 
-      # Keep this immediately before the push: the issued key is short-lived
-      # (about an hour).
+      # Kept immediately before the push: the issued key is short-lived, about an
+      # hour. Skipped on a dry run, which needs no credentials at all -- useful
+      # for testing the pipeline before the trusted publishing policy exists.
       - name: NuGet login (OIDC to short-lived API key)
+        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}   # nuget.org profile name, NOT the email
 
       - name: Push
+        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
         run: >
           dotnet nuget push ./artifacts/*.nupkg
           --source https://api.nuget.org/v3/index.json
           --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
           --skip-duplicate
+
+      - name: Dry run summary
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          echo "### Dry run" >> $GITHUB_STEP_SUMMARY
+          echo "Packed and verified. Nothing was pushed to nuget.org." >> $GITHUB_STEP_SUMMARY
+          ls -la ./artifacts >> $GITHUB_STEP_SUMMARY
