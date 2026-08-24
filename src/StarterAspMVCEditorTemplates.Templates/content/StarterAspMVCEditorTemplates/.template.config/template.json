@@ -1,7 +1,12 @@
 {
   "$schema": "http://json.schemastore.org/template",
-  "author": "Buttersdontfly",
-  "classifications": [ "Web", "MVC", "Identity", "Starter" ],
+  "author": "__AUTHOR__",
+  "classifications": [
+    "Web",
+    "MVC",
+    "Identity",
+    "Starter"
+  ],
   "identity": "StarterAspMVCEditorTemplates.Web.CSharp",
   "groupIdentity": "StarterAspMVCEditorTemplates.Web",
   "name": "ASP.NET Core MVC Starter with Editor Templates",
@@ -14,33 +19,67 @@
     "language": "C#",
     "type": "project"
   },
-
   "symbols": {
     "auth": {
       "type": "parameter",
       "datatype": "choice",
       "defaultValue": "identity",
       "displayName": "Authentication",
-      "description": "Whether to include ASP.NET Core Identity with hand-rolled MVC account pages.",
+      "description": "Each level adds to the one before it.",
       "choices": [
-        {
-          "choice": "identity",
-          "displayName": "Identity",
-          "description": "Login, logout, register, forgot/reset password and change password, built from EditorTemplates."
-        },
         {
           "choice": "none",
           "displayName": "None",
-          "description": "No account pages. Ships an empty AppDbContext wired to SQLite, ready for your own entities."
+          "description": "No account pages. An empty AppDbContext, ready for your own entities."
+        },
+        {
+          "choice": "identity",
+          "displayName": "Identity",
+          "description": "Login, register, password reset and change, built from EditorTemplates. Standard ASP.NET Core password hashing."
+        },
+        {
+          "choice": "pepper",
+          "displayName": "Identity with pepper",
+          "description": "Adds a secret pepper to every password hash, so a stolen database is not enough on its own."
+        },
+        {
+          "choice": "protected",
+          "displayName": "Identity with pepper and protected personal data",
+          "description": "Adds encryption of personal data columns at rest, kept searchable. Losing the keys makes that data unrecoverable."
         }
       ]
     },
-
+    "database": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "sqlite",
+      "displayName": "Database provider",
+      "description": "Which EF Core provider the generated project uses. SQLite needs no server; SQL Server uses LocalDB.",
+      "choices": [
+        {
+          "choice": "sqlite",
+          "displayName": "SQLite",
+          "description": "File-based, no server, works everywhere. Note that SQLite cannot order by decimal, DateTimeOffset, TimeSpan or ulong."
+        },
+        {
+          "choice": "sqlserver",
+          "displayName": "SQL Server (LocalDB)",
+          "description": "Full type support. Requires SQL Server LocalDB, which is Windows only."
+        }
+      ]
+    },
+    "UseSqlServer": {
+      "type": "computed",
+      "value": "(database == \"sqlserver\")"
+    },
+    "UseSqlite": {
+      "type": "computed",
+      "value": "(database == \"sqlite\")"
+    },
     "UseIdentity": {
       "type": "computed",
-      "value": "(auth == \"identity\")"
+      "value": "(auth != \"none\")"
     },
-
     "Framework": {
       "type": "parameter",
       "datatype": "choice",
@@ -49,10 +88,13 @@
       "description": "The target framework for the project.",
       "replaces": "net10.0",
       "choices": [
-        { "choice": "net10.0", "displayName": ".NET 10.0", "description": "Target net10.0" }
+        {
+          "choice": "net10.0",
+          "displayName": ".NET 10.0",
+          "description": "Target net10.0"
+        }
       ]
     },
-
     "IncludeTests": {
       "type": "parameter",
       "datatype": "bool",
@@ -60,7 +102,6 @@
       "displayName": "Include test project",
       "description": "Include a tests/ project with smoke tests for the generated app."
     },
-
     "SeededUserEmail": {
       "type": "parameter",
       "datatype": "string",
@@ -69,16 +110,76 @@
       "description": "Email of the development user seeded on first run. Password is 123User! (see SeedData.cs).",
       "replaces": "SEED-USER-EMAIL"
     },
-
     "skipRestore": {
       "type": "parameter",
       "datatype": "bool",
       "defaultValue": "false",
       "displayName": "Skip restore",
       "description": "If true, skips the automatic restore after generation. NOTE: the first restore must run online once; it writes packages.lock.json, after which restores work offline."
+    },
+    "UsePepper": {
+      "type": "computed",
+      "value": "(auth == \"pepper\" || auth == \"protected\")"
+    },
+    "UseProtectedData": {
+      "type": "computed",
+      "value": "(auth == \"protected\")"
+    },
+    "generatedPepper": {
+      "type": "generated",
+      "generator": "guid",
+      "parameters": {
+        "format": "N"
+      },
+      "replaces": "GENERATED-PEPPER-VALUE"
+    },
+    "generatedLookupKey": {
+      "type": "generated",
+      "generator": "guid",
+      "parameters": {
+        "format": "N"
+      },
+      "replaces": "GENERATED-LOOKUP-KEY"
+    },
+    "connectionPrefix": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "CONNECTION-PREFIX",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          {
+            "condition": "(UseSqlServer)",
+            "value": "Server=(localdb)\\\\MSSQLLocalDB;Database="
+          },
+          {
+            "condition": "",
+            "value": "Data Source=App_Data/"
+          }
+        ]
+      }
+    },
+    "connectionSuffix": {
+      "type": "generated",
+      "generator": "switch",
+      "replaces": "CONNECTION-SUFFIX",
+      "parameters": {
+        "evaluator": "C++",
+        "datatype": "string",
+        "cases": [
+          {
+            "condition": "(UseSqlServer)",
+            "value": ";Trusted_Connection=True;MultipleActiveResultSets=true"
+          },
+          {
+            "condition": "",
+            "value": ".db"
+          }
+        ]
+      }
     }
   },
-
   "sources": [
     {
       "modifiers": [
@@ -106,26 +207,65 @@
         },
         {
           "condition": "(!IncludeTests)",
-          "exclude": [ "tests/**" ]
+          "exclude": [
+            "tests/**"
+          ]
+        },
+        {
+          "condition": "(!UseSqlServer)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Migrations/SqlServer/**"
+          ]
+        },
+        {
+          "condition": "(!UseSqlite)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Migrations/Sqlite/**"
+          ]
+        },
+        {
+          "condition": "(!UseSqlite)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Data/SqliteDatabasePath.cs"
+          ]
+        },
+        {
+          "condition": "(!UsePepper)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Protection/PepperOptions.cs",
+            "src/StarterAspMVCEditorTemplates/Protection/PepperedPasswordHasher.cs"
+          ]
+        },
+        {
+          "condition": "(!UseProtectedData)",
+          "exclude": [
+            "src/StarterAspMVCEditorTemplates/Protection/KeyRing.cs",
+            "src/StarterAspMVCEditorTemplates/Protection/LookupProtector.cs",
+            "src/StarterAspMVCEditorTemplates/Protection/LookupProtectionOptions.cs"
+          ]
         }
       ]
     }
   ],
-
   "primaryOutputs": [
-    { "path": "src/StarterAspMVCEditorTemplates/StarterAspMVCEditorTemplates.csproj" },
+    {
+      "path": "src/StarterAspMVCEditorTemplates/StarterAspMVCEditorTemplates.csproj"
+    },
     {
       "condition": "(IncludeTests)",
       "path": "tests/StarterAspMVCEditorTemplates.Tests/StarterAspMVCEditorTemplates.Tests.csproj"
     }
   ],
-
   "postActions": [
     {
       "id": "restore",
       "condition": "(!skipRestore)",
       "description": "Restore NuGet packages required by this project. This must succeed once while online; it writes packages.lock.json so later restores work offline.",
-      "manualInstructions": [ { "text": "Run 'dotnet restore' once while online." } ],
+      "manualInstructions": [
+        {
+          "text": "Run 'dotnet restore' once while online."
+        }
+      ],
       "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
       "continueOnError": true
     }

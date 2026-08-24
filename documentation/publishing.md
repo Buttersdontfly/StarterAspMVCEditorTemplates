@@ -4,7 +4,7 @@
 
 1. Log in to nuget.org, click your username, choose **Trusted Publishing**.
 2. Add a policy with:
-   - Repository owner: `Buttersdontfly`
+   - Repository owner: `__GITHUB_USER__`
    - Repository: `StarterAspMVCEditorTemplates`
    - Workflow file: `publish.yml` — **filename only**, not the
      `.github/workflows/` path
@@ -50,6 +50,50 @@ surprise.
 `StarterAspMVCEditorTemplates` is unclaimed, so the first successful push
 registers it to your account. Confirm it is still free right before the first
 release — IDs are first-come and cannot be transferred casually afterwards.
+
+## Triggers
+
+Either of these publishes:
+
+- **Pushing a `v*` tag.** The usual route.
+- **Publishing a GitHub Release.** For a release-notes-first flow.
+
+Both together are safe: the push uses `--skip-duplicate`, so whichever runs
+second finds the version already on nuget.org and does nothing.
+
+The `nuget-release` environment is what makes publishing deliberate rather than
+the choice of trigger. Add a required reviewer there and every run waits for
+approval, whichever way it started.
+
+## If the workflow never starts
+
+No run appears in the Actions tab at all. In order of likelihood:
+
+1. **`publish.yml` is not on the default branch.** Tag- and release-triggered
+   workflows run the version of the file on the default branch only. A correct
+   workflow on a feature branch is invisible to the event. Check on github.com,
+   not just locally. If **Run workflow** appears under Actions, this is not your
+   problem.
+2. **The tag was pushed before the workflow reached the default branch.** The
+   event fires once, at push time, against the file as it was then. Re-point the
+   tag:
+
+   ```powershell
+   git tag -d v0.1.0
+   git push origin :refs/tags/v0.1.0
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+   Safe while nothing has consumed the tag: no release, no published package.
+3. **A release saved as a draft fires nothing.** The `published` event happens
+   when you press **Publish release**.
+4. **Actions are disabled for the repository.** Settings, Actions, General.
+
+To test the pipeline without any of this, and without a version:
+**Actions, Publish, Run workflow**, leaving *dry run* ticked. It packs, verifies
+that the template instantiates, and stops before pushing. It also skips the OIDC
+login, so it works before the trusted publishing policy exists.
 
 ## Releasing
 

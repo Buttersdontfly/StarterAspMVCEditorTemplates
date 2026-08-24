@@ -4,27 +4,12 @@
     <PackageType>Template</PackageType>
     <PackageId>StarterAspMVCEditorTemplates</PackageId>
     <Title>ASP.NET Core MVC Starter with Editor Templates</Title>
-    <Description>An ASP.NET Core MVC starter template using SQLite and hand-rolled Identity pages built entirely from EditorTemplates (email, password, name, address).</Description>
+    <Description>An ASP.NET Core MVC starter template using SQLite (SQLServer optional) and hand-rolled Identity pages built entirely from EditorTemplates (email, password, name, address). Identity with progressive higher protection layers</Description>
     <PackageTags>dotnet-new;templates;aspnetcore;mvc;identity;editortemplates</PackageTags>
 
     <TargetFramework>net10.0</TargetFramework>
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-
-    <!--
-      ContentTargetFolders is deliberately NOT set. The source folder is already
-      named "content", so combining the two produced package paths beginning
-      content/content/ and pushed every file 8 characters deeper. The Content
-      item below sets PackagePath explicitly instead.
-    -->
-
-    <!--
-      NU5128: no lib/ref assemblies, expected for a template package.
-      NU5123: long paths inside the package. The template ships a full project
-      tree, and the deepest vendored asset path is inherently long. It is a
-      warning about consumers without long-path support, not a defect, and
-      TreatWarningsAsErrors would otherwise make it fatal.
-    -->
     <NoWarn>$(NoWarn);NU5128;NU5123</NoWarn>
     <NoDefaultExcludes>true</NoDefaultExcludes>
 
@@ -38,9 +23,7 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- PackagePath keeps the tree at content/<project>/... rather than
-         content/content/<project>/... See the note above. -->
+  <ItemGroup>    
     <Content Include="content\**\*"
              Exclude="content\**\bin\**;content\**\obj\**"
              PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />

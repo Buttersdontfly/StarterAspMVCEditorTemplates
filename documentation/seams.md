@@ -10,9 +10,21 @@ grep -rn "SEAM:" .
 
 ## SEAM: database provider
 
-Three places: `Directory.Build.props` (package reference), `Program.cs`
-(`UseSqlite` call), and `Data/SqliteDatabasePath.cs` (SQLite-only path handling,
-delete it entirely for a server-based provider).
+SQLite and SQL Server are both first class, chosen with `--database`. For anything
+else, three places:
+
+- `Directory.Build.props` — the provider `PackageReference`
+- `Program.cs` — the `UseSqlite` / `UseSqlServer` call
+- `Data/SqliteDatabasePath.cs` — SQLite-only path handling; delete it for a
+  server-based provider
+
+Then delete `Migrations/` and re-run `dotnet ef migrations add Initial`.
+Migrations are provider specific and are not portable.
+
+**Why the choice matters:** SQLite has no native `decimal`. Ordering by one
+throws `SQLite cannot order by expressions of type 'decimal'`, and the same
+applies to `DateTimeOffset`, `TimeSpan` and `ulong`. A value converter to
+`double` avoids it at the cost of precision.
 
 Swapping providers also means deleting `Migrations/` and re-running
 `dotnet ef migrations add Initial`. The shipped migrations are SQLite-generated
@@ -76,3 +88,44 @@ it is what makes the password reset flow assertable in the L4 integration tests.
 Console-only output is genuinely hard to test.
 
 Swapping in SMTP or SendGrid is one class plus one DI registration.
+
+## SEAM: password pepper (`--auth pepper` and `--auth protected`)
+
+`Protection/PepperedPasswordHasher.cs` wraps Identity's `PasswordHasher` and
+mixes a secret into every password before hashing. A salt defends against
+precomputation and lives beside the hash; a pepper defends against an attacker
+who has the database but not the configuration, so it is worth something only
+while it lives somewhere a database dump does not.
+
+A random pepper is generated into `appsettings.Development.json` when the project
+is created, so every generated project has its own. **That file is committed, so
+it is a development value.** For anything else, set `Pepper__Value` as an
+environment variable, or use user-secrets.
+
+**Changing the pepper invalidates every existing password hash.** Nobody can sign
+in afterwards, and there is no migration path: the old passwords cannot be
+re-hashed without the plaintext. Treat it as permanent, or plan a forced reset.
+
+Concatenation is safe here because the base hasher is PBKDF2. It would not be
+safe with bcrypt, which truncates at 72 bytes.
+
+## SEAM: protected personal data (`--auth protected`)
+
+`Protection/LookupProtector.cs` and `Protection/KeyRing.cs` encrypt columns
+marked `[ProtectedPersonalData]`, including the email and username columns
+Identity declares itself.
+
+**Losing the keys makes that data unrecoverable.** The addresses are ciphertext,
+so without the key the accounts cannot be found, matched or restored. There is no
+reset flow. Back the keys up somewhere other than the database they protect.
+
+The encryption is deliberately deterministic: the IV is derived from an HMAC of
+the plaintext, so the same input always yields the same ciphertext, which is what
+keeps the column searchable. `FindByEmailAsync` works by encrypting the address
+and comparing. The cost is that equal plaintexts are visibly equal in the
+database, and a guess can be confirmed by encrypting it. That trade is inherent
+to searchable encryption rather than to this implementation.
+
+Rotation: add a new id to `LookupProtection:Keys`, point `CurrentKeyId` at it,
+and keep the old entry. Identity stores the key id with each value, so old rows
+stay readable.

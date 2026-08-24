@@ -62,6 +62,43 @@ public class BuildTests(TemplateFixture fixture)
         return message;
     }
 
+    [Fact]
+    public void SqlServer_combo_builds_cleanly()
+    {
+        // Build only. See TemplateFixture.SqlServerOutput for why this combo is
+        // not run: building catches the provider-specific failures that matter,
+        // and running would need LocalDB, which is Windows only.
+        var exitCode = fixture.RunForExitCode("dotnet", BuildArguments, fixture.SqlServerOutput, out var output);
+        Assert.True(exitCode == 0, $"The --database sqlserver combo failed to build:\n\n{output}");
+    }
+
+    [Fact]
+    public void SqlServer_combo_wires_up_the_right_provider()
+    {
+        // A conditional that silently kept SQLite would still compile, because
+        // both provider packages expose a Use... extension. This is the check
+        // that would catch it.
+        var program = File.ReadAllText(
+            Path.Combine(fixture.SqlServerOutput, "src", "SqlServerApp", "Program.cs"));
+
+        Assert.Contains("UseSqlServer", program);
+        Assert.DoesNotContain("UseSqlite", program);
+    }
+
+    [Fact]
+    public void Pepper_combo_builds_cleanly()
+    {
+        var exitCode = fixture.RunForExitCode("dotnet", BuildArguments, fixture.PepperOutput, out var output);
+        Assert.True(exitCode == 0, $"The --auth pepper combo failed to build:\n\n{output}");
+    }
+
+    [Fact]
+    public void Protected_combo_builds_cleanly()
+    {
+        var exitCode = fixture.RunForExitCode("dotnet", BuildArguments, fixture.ProtectedOutput, out var output);
+        Assert.True(exitCode == 0, $"The --auth protected combo failed to build:\n\n{output}");
+    }
+
     /// <summary>
     /// A compiler warning must still fail the build. This asserts the mechanism
     /// itself is intact, so that removing TreatWarningsAsErrors from the

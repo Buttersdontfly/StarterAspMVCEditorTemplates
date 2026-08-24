@@ -3,9 +3,40 @@
   "icon": "icon.png",
   "order": 0,
   "symbolInfo": [
-    { "id": "auth",         "name": { "text": "Authentication" }, "isVisible": true },
-    { "id": "IncludeTests", "name": { "text": "Include test project" }, "isVisible": true },
-    { "id": "SeededUserEmail", "name": { "text": "Seeded user email" }, "isVisible": true },
-    { "id": "Framework",    "name": { "text": "Target framework" }, "isVisible": true }
+    {
+      "id": "database",
+      "name": {
+        "text": "Database provider"
+      },
+      "isVisible": true
+    },
+    {
+      "id": "auth",
+      "name": {
+        "text": "Authentication"
+      },
+      "isVisible": true
+    },
+    {
+      "id": "IncludeTests",
+      "name": {
+        "text": "Include test project"
+      },
+      "isVisible": true
+    },
+    {
+      "id": "SeededUserEmail",
+      "name": {
+        "text": "Seeded user email"
+      },
+      "isVisible": true
+    },
+    {
+      "id": "Framework",
+      "name": {
+        "text": "Target framework"
+      },
+      "isVisible": true
+    }
   ]
 }

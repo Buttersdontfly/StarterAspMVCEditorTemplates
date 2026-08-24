@@ -1,21 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 #if (UseIdentity)
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using StarterAspMVCEditorTemplates.Identity;
 #endif
 
 namespace StarterAspMVCEditorTemplates.Data;
 
 #if (UseIdentity)
 public class AppDbContext(DbContextOptions<AppDbContext> options)
-    : IdentityDbContext<IdentityUser>(options)
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
 {
-    // Add your own DbSet<T> properties here.
+	
+	
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("AspNetUserRoles");
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly); 
+    }
+
 }
 #else
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    // Add your own DbSet<T> properties here, then run
-    // `dotnet ef migrations add Initial` to create the first migration.
+
 }
 #endif

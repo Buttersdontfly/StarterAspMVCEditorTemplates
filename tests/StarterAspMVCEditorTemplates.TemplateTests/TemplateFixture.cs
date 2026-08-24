@@ -18,6 +18,21 @@ public sealed class TemplateFixture : IDisposable
     public string IdentityOutput { get; }
     public string PlainOutput { get; }
 
+    /// <summary>
+    /// SQL Server combo, generated and built but never run. Building is enough to
+    /// catch what actually breaks per provider -- a migration that does not
+    /// compile, or a conditional that leaves the wrong provider wired up. Running
+    /// it would need LocalDB, which is Windows only, and that cost buys very
+    /// little: the application code is identical across providers.
+    /// </summary>
+    public string SqlServerOutput { get; }
+
+    /// <summary>Identity plus a peppered password hasher.</summary>
+    public string PepperOutput { get; }
+
+    /// <summary>Identity, pepper, and encrypted personal data columns.</summary>
+    public string ProtectedOutput { get; }
+
     private readonly string _workRoot;
     private readonly string _cliHome;
 
@@ -46,6 +61,15 @@ public sealed class TemplateFixture : IDisposable
 
         Run("dotnet", $"new starterasp-mvc -n IdentityApp -o \"{IdentityOutput}\" --auth identity --no-restore", RepoRoot);
         Run("dotnet", $"new starterasp-mvc -n PlainApp -o \"{PlainOutput}\" --auth none --no-restore", RepoRoot);
+
+        SqlServerOutput = Path.Combine(_workRoot, "sqlserver");
+        Run("dotnet", $"new starterasp-mvc -n SqlServerApp -o \"{SqlServerOutput}\" --auth identity --database sqlserver --no-restore", RepoRoot);
+
+        PepperOutput = Path.Combine(_workRoot, "pepper");
+        Run("dotnet", $"new starterasp-mvc -n PepperApp -o \"{PepperOutput}\" --auth pepper --no-restore", RepoRoot);
+
+        ProtectedOutput = Path.Combine(_workRoot, "protected");
+        Run("dotnet", $"new starterasp-mvc -n ProtectedApp -o \"{ProtectedOutput}\" --auth protected --no-restore", RepoRoot);
     }
 
     /// <summary>Runs a command, returning stdout+stderr. Throws on failure.</summary>

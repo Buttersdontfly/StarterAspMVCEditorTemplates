@@ -72,7 +72,12 @@ try {
     # release, but for a local dev loop it produces the same 0.0.0-alpha.0 every
     # time (and warns MINVER1001 if the repo has no git history at all), which
     # is exactly the stale-cache trap above. Override it here only.
-    $devVersion = "0.0.0-dev.$(Get-Date -Format 'yyyyMMddHHmmss')"
+    # 9999 rather than 0.0.0: a local build must sort ABOVE anything published,
+    # or `dotnet new` reports the released package as "an update" for the working
+    # copy and invites you to overwrite your own build with it. The timestamp
+    # keeps each local pack unique, which is what stops NuGet serving a cached
+    # package after a template edit.
+    $devVersion = "9999.0.0-dev.$(Get-Date -Format 'yyyyMMddHHmmss')"
 
     Remove-Item (Join-Path $repo 'artifacts') -Recurse -Force -ErrorAction SilentlyContinue
 

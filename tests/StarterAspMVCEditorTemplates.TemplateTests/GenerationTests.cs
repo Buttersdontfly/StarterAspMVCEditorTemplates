@@ -13,9 +13,22 @@ namespace StarterAspMVCEditorTemplates.TemplateTests;
 [Collection("template")]
 public class GenerationTests(TemplateFixture fixture)
 {
+    /// <summary>
+    /// Every file the template GENERATED, excluding build output.
+    /// </summary>
+    /// <remarks>
+    /// bin and obj must be excluded here rather than in individual tests.
+    /// BuildTests shares this fixture and may run first, and a build copies
+    /// content files such as appsettings.Development.json into bin. Any
+    /// assertion counting or matching files then sees each one twice, and
+    /// whether it does depends on test order -- so the failure is intermittent
+    /// and looks like a template bug rather than a test bug.
+    /// </remarks>
     private static string[] Files(string root) =>
         Directory.GetFiles(root, "*", SearchOption.AllDirectories)
             .Select(p => p.Replace('\\', '/'))
+            .Where(p => !p.Contains("/bin/", StringComparison.Ordinal)
+                     && !p.Contains("/obj/", StringComparison.Ordinal))
             .ToArray();
 
     [Theory]
@@ -458,6 +471,174 @@ public class GenerationTests(TemplateFixture fixture)
         Assert.Contains("AccountIdentityConventions", code);
         Assert.DoesNotContain("new IdentityUser", code);
         Assert.DoesNotContain(".UserName", code);
+    }
+
+
+    /// <summary>
+    /// Only the chosen provider's migrations may ship. Both sets in one project
+    /// would collide on the model snapshot class, and the wrong set would apply
+    /// SQL the other provider cannot execute.
+    /// </summary>
+    [Fact]
+    public void Only_the_chosen_providers_migrations_are_generated()
+    {
+        var sqlite = Files(fixture.IdentityOutput)
+            .Where(f => f.Contains("/Migrations/", StringComparison.Ordinal)).ToList();
+        var sqlServer = Files(fixture.SqlServerOutput)
+            .Where(f => f.Contains("/Migrations/", StringComparison.Ordinal)).ToList();
+
+        Assert.All(sqlite, f => Assert.DoesNotContain("/SqlServer/", f));
+        Assert.All(sqlServer, f => Assert.DoesNotContain("/Sqlite/", f));
+        Assert.NotEmpty(sqlite);
+        Assert.NotEmpty(sqlServer);
+    }
+
+    /// <summary>
+    /// SqliteDatabasePath solves a SQLite-only problem, so shipping it with a
+    /// server provider would be dead code referencing a package that is not there.
+    /// </summary>
+    [Fact]
+    public void Sqlite_only_helpers_are_absent_from_the_sqlserver_combo()
+    {
+        Assert.DoesNotContain(Files(fixture.SqlServerOutput),
+            f => f.EndsWith("SqliteDatabasePath.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Connection_string_matches_the_chosen_provider()
+    {
+        var sqlite = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("src/IdentityApp/appsettings.json", StringComparison.Ordinal)));
+        var sqlServer = File.ReadAllText(Files(fixture.SqlServerOutput)
+            .Single(f => f.EndsWith("src/SqlServerApp/appsettings.json", StringComparison.Ordinal)));
+
+        Assert.Contains("Data Source=", sqlite);
+        Assert.Contains("MSSQLLocalDB", sqlServer);
+
+        foreach (var placeholder in new[] { "CONNECTION-PREFIX", "CONNECTION-SUFFIX" })
+        {
+            Assert.DoesNotContain(placeholder, sqlite);
+            Assert.DoesNotContain(placeholder, sqlServer);
+        }
+
+        // The database is named after the project, not after the template.
+        // Every generated app sharing one LocalDB database would have them
+        // silently overwriting each other's data.
+        Assert.Contains("IdentityApp", sqlite);
+        Assert.Contains("Database=SqlServerApp;", sqlServer);
+        Assert.DoesNotContain("StarterAspMVCEditorTemplates", sqlite);
+        Assert.DoesNotContain("StarterAspMVCEditorTemplates", sqlServer);
+    }
+
+    [Fact]
+    public void Identity_types_are_the_applications_own_and_keyed_on_guid()
+    {
+        var user = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("Identity/ApplicationUser.cs", StringComparison.Ordinal)));
+        var context = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("Data/AppDbContext.cs", StringComparison.Ordinal)));
+
+        Assert.Contains("IdentityUser<Guid>", user);
+        Assert.Contains("ApplicationUser, ApplicationRole, Guid", context);
+    }
+
+
+    /// <summary>
+    /// Each auth level ships exactly what it needs and nothing more.
+    /// </summary>
+    [Fact]
+    public void Auth_levels_include_the_right_protection_files()
+    {
+        static bool Has(IEnumerable<string> files, string name) =>
+            files.Any(f => f.EndsWith(name, StringComparison.Ordinal));
+
+        var identity = Files(fixture.IdentityOutput);
+        var pepper = Files(fixture.PepperOutput);
+        var guarded = Files(fixture.ProtectedOutput);
+
+        Assert.False(Has(identity, "PepperedPasswordHasher.cs"), "plain identity must not ship the pepper");
+        Assert.True(Has(pepper, "PepperedPasswordHasher.cs"), "pepper level must ship the hasher");
+        Assert.True(Has(guarded, "PepperedPasswordHasher.cs"), "protected builds on pepper");
+
+        Assert.False(Has(pepper, "LookupProtector.cs"), "pepper alone must not ship the lookup protector");
+        Assert.True(Has(guarded, "LookupProtector.cs"), "protected must ship the lookup protector");
+        Assert.True(Has(guarded, "KeyRing.cs"), "protected must ship the key ring");
+    }
+
+    /// <summary>
+    /// The generated secrets must actually be generated.
+    ///
+    /// A placeholder surviving into the output would be worse than a missing
+    /// value: every project produced by the template would share one pepper, so
+    /// anyone with the template would know it, and the pepper would be worth
+    /// nothing while appearing to work.
+    /// </summary>
+    [Theory]
+    [InlineData("GENERATED-PEPPER-VALUE")]
+    [InlineData("GENERATED-LOOKUP-KEY")]
+    public void Generated_secrets_are_replaced(string placeholder)
+    {
+        foreach (var root in new[] { fixture.PepperOutput, fixture.ProtectedOutput })
+        {
+            var offenders = Files(root)
+                .Where(f => f.EndsWith(".json", StringComparison.Ordinal))
+                .Where(f => File.ReadAllText(f).Contains(placeholder, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.True(offenders.Count == 0,
+                $"'{placeholder}' was not replaced, so every generated project would share this secret:\n"
+                + string.Join("\n", offenders));
+        }
+    }
+
+    /// <summary>
+    /// Two projects generated from the same template must not share a pepper.
+    /// This is the property that makes generating one worthwhile at all.
+    /// </summary>
+    [Fact]
+    public void Generated_secrets_differ_between_projects()
+    {
+        static string Secrets(string root) =>
+            File.ReadAllText(Files(root)
+                .Single(f => f.EndsWith("appsettings.Development.json", StringComparison.Ordinal)));
+
+        Assert.NotEqual(Secrets(fixture.PepperOutput), Secrets(fixture.ProtectedOutput));
+    }
+
+
+    /// <summary>
+    /// Login must accept whichever identifier the seam is configured for,
+    /// without demanding the other one.
+    ///
+    /// ASP.NET Core adds an implicit [Required] to non-nullable reference type
+    /// properties. With Email non-nullable, switching SignInWithEmail to false
+    /// made every sign-in fail on a field the form does not even render, and the
+    /// only fix at the call site was a ModelState.Remove -- which is the sort of
+    /// thing the seam exists to avoid.
+    /// </summary>
+    [Fact]
+    public void Login_identifiers_are_nullable_so_the_unused_one_is_not_required()
+    {
+        var model = File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("Models/Account/LoginInputModel.cs", StringComparison.Ordinal)));
+
+        Assert.Contains("string? Email", model);
+        Assert.Contains("string? UserName", model);
+        Assert.DoesNotContain("public string Email", model);
+    }
+
+    /// <summary>
+    /// The account controller must not need ModelState surgery to make the seam
+    /// work. If a ModelState.Remove appears here, the validation rules are wrong
+    /// somewhere else.
+    /// </summary>
+    [Fact]
+    public void Account_controller_does_not_patch_model_state()
+    {
+        var controller = StripComments(File.ReadAllText(Files(fixture.IdentityOutput)
+            .Single(f => f.EndsWith("Controllers/AccountController.cs", StringComparison.Ordinal))));
+
+        Assert.DoesNotContain("ModelState.Remove", controller);
     }
 
     [Theory]

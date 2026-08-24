@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using StarterAspMVCEditorTemplates.Data;
+using StarterAspMVCEditorTemplates.Identity;
 using StarterAspMVCEditorTemplates.Services;
 using Xunit;
 
@@ -22,7 +23,8 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
         AllowAutoRedirect = true
     });
 
-    private static string UniqueEmail() => $"user-{Guid.NewGuid():N}@example.com";
+    private static string UniqueEmail() => $"testuser-{Guid.NewGuid():N}@example.com";
+	private static string UniqueUsername() => $"testuser-{Guid.NewGuid():N}";
 
     private async Task<HttpResponseMessage> PostFormAsync(
         HttpClient client, string url, Dictionary<string, string> fields)
@@ -45,9 +47,8 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
         });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        // Signed in means the protected page is reachable rather than redirecting.
-        var protectedPage = await client.GetAsync("/Account/ChangePassword");
+        
+        var protectedPage = await client.GetAsync("/Account/ChangePassword", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, protectedPage.StatusCode);
     }
 
@@ -66,7 +67,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var protectedPage = await client.GetAsync("/Account/ChangePassword");
+        var protectedPage = await client.GetAsync("/Account/ChangePassword", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, protectedPage.StatusCode);
     }
 
@@ -90,17 +91,18 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
     public async Task Password_can_be_reset_through_the_emailed_link()
     {
         var client = NewClient();
-        var email = UniqueEmail();
-        const string newPassword = "Replaced123!";
+		var email = UniqueEmail();
+		var username = AccountIdentityConventions.SignInWithEmail ? email : UniqueUsername();
+		const string newPassword = "Replaced123!";
 
-        await PostFormAsync(client, "/Account/Register", new Dictionary<string, string>
-        {
-            ["Email"] = email,
-            ["Password"] = "123User!",
-            ["ConfirmPassword"] = "123User!"
-        });
-
-        // Sign out so the reset is exercised anonymously.
+		await PostFormAsync(client, "/Account/Register", new Dictionary<string, string>
+		{
+			["UserName"] = username,
+			["Email"] = email,
+			["Password"] = "123User!",
+			["ConfirmPassword"] = "123User!"
+		});
+        
         var anonymous = NewClient();
 
         await PostFormAsync(anonymous, "/Account/ForgotPassword", new Dictionary<string, string>
@@ -115,10 +117,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
         var link = ExtractLink(message!.HtmlBody);
         Assert.Contains("ResetPassword", link);
 
-        // Follow the link exactly as a mail client would, then post the form it
-        // returns. This is what catches an encoded ampersand turning "token"
-        // into "amp;token".
-        var resetPage = await anonymous.GetAsync(link);
+        var resetPage = await anonymous.GetAsync(link, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, resetPage.StatusCode);
 
         var document = await HtmlPage.ReadAsync(resetPage);
@@ -134,7 +133,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
                 ["ConfirmPassword"] = newPassword,
                 ["Token"] = token!,
                 ["__RequestVerificationToken"] = HtmlPage.AntiforgeryToken(document)
-            }));
+            }), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
 
@@ -147,7 +146,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
             ["RememberMe"] = "false"
         });
         Assert.Equal(HttpStatusCode.OK,
-            (await afterReset.GetAsync("/Account/ChangePassword")).StatusCode);
+            (await afterReset.GetAsync("/Account/ChangePassword", TestContext.Current.CancellationToken)).StatusCode);
 
         // ...and the old one does not.
         var withOldPassword = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -160,8 +159,10 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
             ["Password"] = "123User!",
             ["RememberMe"] = "false"
         });
-        var stillProtected = await withOldPassword.GetAsync("/Account/ChangePassword");
+        var stillProtected = await withOldPassword.GetAsync("/Account/ChangePassword", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Redirect, stillProtected.StatusCode);
+		
+		CleanTestMail(factory, $"*{SeedData.DevUserEmail.Replace('@', '-')}*");
     }
 
     [Fact]
@@ -191,11 +192,13 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
             ["Email"] = SeedData.DevUserEmail
         });
 
-        var mailbox = await client.GetAsync("/dev/mailbox");
+        var mailbox = await client.GetAsync("/dev/mailbox, TestContext.Current.CancellationToken");
         Assert.Equal(HttpStatusCode.OK, mailbox.StatusCode);
 
         var document = await HtmlPage.ReadAsync(mailbox);
         Assert.Contains("Reset your password", document.Body!.TextContent);
+		
+		CleanTestMail(factory, $"*{SeedData.DevUserEmail.Replace('@', '-')}*");
     }
 
     private static string ExtractLink(string html)
@@ -204,4 +207,13 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
         Assert.True(match.Success, "No link found in the email body.");
         return System.Net.WebUtility.HtmlDecode(match.Groups[1].Value);
     }
+	
+	private static void CleanTestMail(TestWebAppFactory factory, string pattern)
+	{
+		var mailDirectory = Path.Combine(factory.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>().ContentRootPath, "App_Data", "mail");
+		foreach (var file in Directory.EnumerateFiles(mailDirectory, pattern))
+		{
+			File.Delete(file);
+		}
+	}
 }

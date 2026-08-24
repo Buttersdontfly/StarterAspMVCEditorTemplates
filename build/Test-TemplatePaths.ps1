@@ -22,7 +22,9 @@ $templateJson = Join-Path $content '.template.config/template.json'
 
 # Paths legitimately absent until a generation step has been run.
 $knownPending = @{
-    'src/StarterAspMVCEditorTemplates/Migrations/**' = 'run build/Generate-Migrations.ps1'
+    'src/StarterAspMVCEditorTemplates/Migrations/**'           = 'run build/Generate-Migrations.ps1'
+    'src/StarterAspMVCEditorTemplates/Migrations/Sqlite/**'    = 'run build/Generate-Migrations.ps1'
+    'src/StarterAspMVCEditorTemplates/Migrations/SqlServer/**' = 'run build/Generate-Migrations.ps1'
 }
 
 $template = Get-Content $templateJson -Raw | ConvertFrom-Json

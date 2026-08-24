@@ -6,8 +6,7 @@ using StarterAspMVCEditorTemplates.Services;
 namespace StarterAspMVCEditorTemplates.Controllers;
 
 /// <summary>
-/// Development-only pages. Every action returns 404 outside Development, so
-/// this cannot leak if it is left in place by accident.
+/// Development-only pages. Every action returns 404 outside Development
 /// </summary>
 [Route("dev")]
 public class DevController(IWebHostEnvironment environment, IAppEmailSender emailSender) : Controller
@@ -22,8 +21,7 @@ public class DevController(IWebHostEnvironment environment, IAppEmailSender emai
     }
 
     /// <summary>
-    /// The editor template gallery: every template rendered in filled, invalid
-    /// and empty states.
+    /// The editor template gallery: every template rendered in filled, invalid and empty states.
     ///
     /// This page is the anchor for EditorTemplateTests. If you add a template
     /// and do not add a property for it to EditorSampleModel, that test fails --

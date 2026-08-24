@@ -8,7 +8,7 @@ public class SmokeTests(TestWebAppFactory factory) : IClassFixture<TestWebAppFac
     [Fact]
     public async Task Home_page_loads()
     {
-        var response = await factory.CreateClient().GetAsync("/");
+        var response = await factory.CreateClient().GetAsync("/", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -16,7 +16,7 @@ public class SmokeTests(TestWebAppFactory factory) : IClassFixture<TestWebAppFac
     [Fact]
     public async Task Login_page_loads()
     {
-        var response = await factory.CreateClient().GetAsync("/Account/Login");
+        var response = await factory.CreateClient().GetAsync("/Account/Login", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -28,7 +28,7 @@ public class SmokeTests(TestWebAppFactory factory) : IClassFixture<TestWebAppFac
             AllowAutoRedirect = false
         });
 
-        var response = await client.GetAsync("/Account/ChangePassword");
+        var response = await client.GetAsync("/Account/ChangePassword", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains("/Account/Login", response.Headers.Location?.OriginalString ?? "");

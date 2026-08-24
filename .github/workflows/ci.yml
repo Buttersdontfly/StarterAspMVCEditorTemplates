@@ -88,6 +88,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # SQLite gets the full treatment. SQL Server is generated and built by
+        # the template tests but never run: that would need LocalDB, which is
+        # Windows only, and the application code is identical across providers.
         auth: [ identity, none ]
     steps:
       - uses: actions/checkout@v4

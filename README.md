@@ -12,20 +12,31 @@ cd MyApp && dotnet run
 
 Sign in with `dev@localhost` / `123User!`.
 
-Repository: <https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates>
-Licence: MIT, (c) Buttersdontfly
+Repository: <https://github.com/__GITHUB_USER__/StarterAspMVCEditorTemplates>
+Licence: MIT, (c) __AUTHOR__
 
 ## Options
 
 | Option | Values | Default |
 |---|---|---|
-| `--auth` | `identity`, `none` | `identity` |
+| `--database` | `sqlite`, `sqlserver` | `sqlite` |
+| `--auth` | `none`, `identity`, `pepper`, `protected` | `identity` |
 | `--tests` | `true`, `false` | `true` |
 | `--seed-email` | any email | `dev@localhost` |
 
-SQLite is used unconditionally. To move to another provider, edit
-`Directory.Build.props` and the `UseSqlite` call in `Program.cs` — see
+`--database sqlserver` targets LocalDB, which is Windows only. Note that SQLite
+cannot order by `decimal`, `DateTimeOffset`, `TimeSpan` or `ulong` — if your
+model sorts on money or timestamps-with-offset, choose `sqlserver`.
+
+For any other provider, edit `Directory.Build.props` and the `Use...` call in
+`Program.cs`, then regenerate migrations — see
 [documentation/seams.md](documentation/seams.md).
+
+Each `--auth` level adds to the one before it: `identity` gives the account
+pages, `pepper` adds a secret to every password hash, and `protected` adds
+encryption of personal data columns at rest. A random pepper and lookup key are
+generated per project into `appsettings.Development.json` — see
+[documentation/seams.md](documentation/seams.md) for what they cost you if lost.
 
 ## What you get
 

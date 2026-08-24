@@ -14,14 +14,10 @@ namespace StarterAspMVCEditorTemplates.Controllers;
 /// Hand-rolled account pages. Deliberately NOT the Identity.UI Razor Class
 /// Library: the point of this template is that every input is rendered by an
 /// editor template you own and can edit in one place.
-///
-/// Note that nothing here references IdentityUser.UserName. All identifier
-/// decisions go through AccountIdentityConventions — see documentation/seams.md.
-/// CI fails the build if that stops being true.
 /// </summary>
 public class AccountController(
-    UserManager<IdentityUser> userManager,
-    SignInManager<IdentityUser> signInManager,
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
     IAppEmailSender emailSender,
     ILogger<AccountController> logger) : Controller
 {
@@ -48,8 +44,6 @@ public class AccountController(
         var user = await AccountIdentityConventions.FindForSignInAsync(userManager, input);
         if (user is null)
         {
-            // Same message whether the account exists or the password was wrong,
-            // so the form cannot be used to discover which addresses are registered.
             ModelState.AddModelError(string.Empty, AccountIdentityConventions.SignInFailedMessage);
             return View(input);
         }
@@ -180,12 +174,6 @@ public class AccountController(
 
         var user = await AccountIdentityConventions.FindForPasswordResetAsync(userManager, input.Email);
 
-        // Always report the same outcome, so the form cannot be used to find out
-        // which addresses have accounts.
-        //
-        // Written as a nested if rather than a compound condition: the compiler
-        // cannot prove `user` is non-null across `a && b || a && c`, and with
-        // TreatWarningsAsErrors that is a build failure, not a warning.
         if (user is not null)
         {
             var mayReset = !userManager.Options.SignIn.RequireConfirmedAccount
@@ -238,8 +226,7 @@ public class AccountController(
 
         var user = await AccountIdentityConventions.FindForPasswordResetAsync(userManager, input.Email);
         if (user is null)
-        {
-            // Do not reveal that the account does not exist.
+        {            
             return RedirectToAction(nameof(ResetPasswordConfirmation));
         }
 

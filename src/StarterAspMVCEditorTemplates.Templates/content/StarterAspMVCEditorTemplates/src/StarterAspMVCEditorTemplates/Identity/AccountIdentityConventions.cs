@@ -7,7 +7,7 @@ namespace StarterAspMVCEditorTemplates.Identity;
 /// SEAM: username identity.
 ///
 /// The ONLY file that decides how a login identifier maps onto
-/// IdentityUser.UserName. Nothing else in the project touches UserName --
+/// ApplicationUser.UserName. Nothing else in the project touches UserName --
 /// not the controllers, not the views, not the seeder. That invariant is
 /// enforced by a test (GenerationTests.UserName_is_only_touched_by_the_conventions_class)
 /// and by build/Lint-Generated.ps1, so the coupling cannot spread without
@@ -44,11 +44,11 @@ public static class AccountIdentityConventions
     /// Builds a new user. <paramref name="userName"/> is ignored when
     /// <see cref="SignInWithEmail"/> is true, and required when it is false.
     /// </summary>
-    public static IdentityUser CreateUser(string email, string? userName = null)
+    public static ApplicationUser CreateUser(string email, string? userName = null)
     {
         if (SignInWithEmail)
         {
-            return new IdentityUser { UserName = email, Email = email };
+            return new ApplicationUser { UserName = email, Email = email };
         }
 
         if (string.IsNullOrWhiteSpace(userName))
@@ -57,30 +57,30 @@ public static class AccountIdentityConventions
                 "A username is required when SignInWithEmail is false.", nameof(userName));
         }
 
-        return new IdentityUser { UserName = userName, Email = email };
+        return new ApplicationUser { UserName = userName, Email = email };
     }
 
-    public static IdentityUser CreateUser(RegisterInputModel input) =>
+    public static ApplicationUser CreateUser(RegisterInputModel input) =>
         CreateUser(input.Email, input.UserName);
 
-    public static async Task<IdentityUser?> FindForSignInAsync(
-        UserManager<IdentityUser> userManager, LoginInputModel input) =>
+    public static async Task<ApplicationUser?> FindForSignInAsync(
+        UserManager<ApplicationUser> userManager, LoginInputModel input) =>
         SignInWithEmail
-            ? await userManager.FindByEmailAsync(input.Email)
+            ? await userManager.FindByEmailAsync(input.Email ?? string.Empty)
             : await userManager.FindByNameAsync(input.UserName ?? string.Empty);
 
     /// <summary>
     /// Password reset is always keyed on email: the reset link is delivered
     /// there, so a username would add nothing.
     /// </summary>
-    public static async Task<IdentityUser?> FindForPasswordResetAsync(
-        UserManager<IdentityUser> userManager, string email) =>
+    public static async Task<ApplicationUser?> FindForPasswordResetAsync(
+        UserManager<ApplicationUser> userManager, string email) =>
         await userManager.FindByEmailAsync(email);
 
     /// <summary>
     /// The value handed to SignInManager, which always works in terms of UserName.
     /// </summary>
-    public static string SignInIdentifier(IdentityUser user) =>
+    public static string SignInIdentifier(ApplicationUser user) =>
         user.UserName ?? user.Email ?? string.Empty;
 
     /// <summary>

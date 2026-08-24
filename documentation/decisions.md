@@ -584,3 +584,147 @@ Rather than keeping a list of exceptions in the test, those controls carry
 `data-no-post`, so the intent lives in the markup next to the decision. A second
 test asserts the converse -- anything carrying `data-no-post` must genuinely have
 no `name` -- so the marker cannot be used to wave through a real mistake.
+
+## Publishing triggers on a tag push or a release
+
+`publish.yml` originally ran on `release: published` only, on the reasoning that
+creating a release is the explicit decision to ship. In practice that surprised
+more than it protected: pushing a tag looked like it should publish and silently
+did nothing, with no run in the Actions tab to explain why.
+
+It now triggers on both a `v*` tag push and a published release. They coexist
+safely because the push uses `--skip-duplicate`: whichever runs second finds the
+version already on nuget.org and exits cleanly.
+
+Deliberateness comes from the `nuget-release` environment instead, which is a
+better place for it. A required reviewer there gates every run whatever started
+it, rather than relying on a trigger choice nobody can see.
+
+`workflow_dispatch` with a `dry_run` input (default true) exists for both
+problems. It packs, installs the packed nupkg, builds both combos, and stops
+before pushing. It also skips the OIDC login, so the pipeline can be exercised
+before the trusted publishing policy exists. Gated by the same environment, so
+it grants nothing extra.
+
+## SQL Server is an option; SQLite stays the default
+
+`--database sqlite|sqlserver`, default `sqlite`.
+
+The reason SQL Server was needed is worth recording, because it is not obvious
+and it bites in normal use: **SQLite has no native `decimal`**. EF Core can read
+and write the values, and compare for equality, but ordering has to happen on the
+client, so `OrderBy` on a `decimal` throws
+`SQLite cannot order by expressions of type 'decimal'`. The same applies to
+`DateTimeOffset`, `TimeSpan` and `ulong`. A value converter to `double` works but
+loses precision, which is the wrong trade for money.
+
+That is a real defect in what shipped: `LineItem.UnitPrice` is a `decimal`, so
+ordering line items by price fails on SQLite today.
+
+### Testing
+
+SQLite gets the full treatment. SQL Server is generated and **built but never
+run**. Building catches what actually differs per provider -- a migration that
+does not compile, a conditional leaving the wrong provider wired up -- while
+running would need LocalDB, which is Windows only, and the application code is
+identical either way. `BuildTests` also asserts the SQL Server output contains
+`UseSqlServer` and not `UseSqlite`, because a conditional that silently kept
+SQLite would still compile.
+
+### Migrations
+
+Provider specific, so there are two sets in `Migrations/Sqlite` and
+`Migrations/SqlServer`, and the template excludes whichever does not apply.
+Shipping both would collide on the model snapshot class.
+`Generate-Migrations.ps1` produces both by generating one project per provider.
+Generating needs no live server, only the provider assembly.
+
+### Connection string
+
+`appsettings.json` carries a `CONNECTION-STRING-PLACEHOLDER` replaced by a
+`switch` generator in `template.json`. Comment-style conditionals would leave
+invalid JSON in the repository; this keeps the file parseable by ordinary tooling
+at rest.
+
+## Identity types are the application's own, keyed on Guid
+
+`ApplicationUser : IdentityUser<Guid>` and `ApplicationRole : IdentityRole<Guid>`,
+both deliberately empty.
+
+Empty because introducing them later changes the schema, so having them from the
+start makes adding a property an edit rather than a migration away from the
+framework type. Guid rather than the default string key because it is opaque,
+leaks neither row counts nor creation order, and survives moving rows between
+databases. The cost is index width, irrelevant at the scale this template targets.
+
+## Generation assertions ignore build output
+
+`GenerationTests.Files` excludes `bin/` and `obj/`.
+
+`BuildTests` shares the fixture, and a build copies content files such as
+`appsettings.Development.json` into `bin`. Any assertion that counts or matches
+files then sees each one twice, and whether it does depends on which test class
+ran first -- so the failure is intermittent and reads as a template bug rather
+than a test bug. It surfaced as `Sequence contains more than one element` from a
+`Single()` that had been correct in isolation.
+
+The exclusion belongs in the shared helper rather than in the one test that
+noticed, because every other file assertion had the same latent problem.
+
+## dotnet-ef is a pinned local tool
+
+`.config/dotnet-tools.json` pins `dotnet-ef`, and the scripts run it with
+`dotnet tool run dotnet-ef` after `dotnet tool restore`.
+
+A global tool was the obvious choice and the wrong one. `dotnet tool install
+--global` puts the executable in `~/.dotnet/tools`, which is not on PATH until
+the shell restarts. So on a clean machine, or after wiping the tools folder, the
+script installed dotnet-ef and then immediately failed with "dotnet-ef does not
+exist" -- an error that reads like a missing dependency when the dependency had
+just been installed.
+
+A local tool needs no PATH entry, restores with the repository, and pins the
+version so migrations are generated by the same EF Core the project references.
+
+## Local packs are versioned above released ones
+
+`Install-TemplateLocally.ps1` packs as `9999.0.0-dev.<timestamp>`.
+
+It used `0.0.0-dev.<timestamp>`, which sorts BELOW anything on nuget.org. Once
+the package was published, every local install printed "An update for template
+package is available" and suggested replacing the working copy with the released
+version -- exactly backwards while developing the template.
+
+The timestamp is still there, and still load-bearing: NuGet caches by id and
+version, so a fixed local version can serve stale content after a template edit.
+
+## Login identifiers are nullable
+
+`LoginInputModel.Email` and `.UserName` are both `string?`.
+
+ASP.NET Core adds an **implicit `[Required]`** to every non-nullable reference
+type property. The login form renders one identifier or the other, never both,
+so the one that is not rendered posts nothing and fails that implicit rule --
+producing a validation error about a field the user was never shown. Flipping
+`SignInWithEmail` to false therefore broke every sign-in, and the only fix at the
+call site was `ModelState.Remove(nameof(input.Email))`, which is exactly the kind
+of scattered patching the seam exists to prevent.
+
+Making both nullable removes the implicit requirement and leaves
+`IValidatableObject.Validate` as the single place deciding which identifier is
+needed. A test asserts `AccountController` contains no `ModelState.Remove`: if
+one is ever needed again, the validation rules are wrong somewhere else.
+
+## The database is named after the project
+
+`appsettings.json` holds
+`CONNECTION-PREFIX<sourceName>CONNECTION-SUFFIX`, with only the surrounding
+fragments generated per provider.
+
+The name has to be literal file content because `sourceName` replacement rewrites
+the file's own text, and the engine does not re-scan what a generated symbol just
+inserted. A project name written inside the generator value would have survived
+as `StarterAspMVCEditorTemplates` in every generated project -- so every app on a
+machine would share one LocalDB database and silently overwrite each other's data.
+Splitting into prefix and suffix keeps the name in the file and avoids depending
+on the order two replacements happen to run in.

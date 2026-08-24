@@ -15,6 +15,11 @@ public class RegisterInputModel : IValidatableObject
     /// Collected only when AccountIdentityConventions.SignInWithEmail is false.
     /// Always present so that flipping the constant needs no edit here.
     /// </summary>
+    /// <summary>
+    /// Nullable so that ASP.NET Core's implicit [Required] for non-nullable
+    /// reference types does not fire when the field is not rendered. See
+    /// LoginInputModel.Email for the full explanation.
+    /// </summary>
     [Display(Name = "Username")]
     [UIHint("UserName")]
     [StringLength(64, MinimumLength = 3,

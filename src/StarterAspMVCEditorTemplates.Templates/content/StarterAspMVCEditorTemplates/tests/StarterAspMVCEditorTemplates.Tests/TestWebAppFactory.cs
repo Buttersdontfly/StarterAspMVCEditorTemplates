@@ -29,8 +29,14 @@ namespace StarterAspMVCEditorTemplates.Tests;
 /// </summary>
 public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IDisposable
 {
+#if (UseSqlite)
     private readonly string _databasePath =
         Path.Combine(Path.GetTempPath(), $"test-{Guid.NewGuid():N}.db");
+#else
+    // Each run gets its own LocalDB database, for the same isolation reason as
+    // the SQLite file: xUnit runs test classes in parallel.
+    private readonly string _databaseName = $"StarterAspMVCEditorTemplatesTest_{Guid.NewGuid():N}";
+#endif
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -40,7 +46,12 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IDisposa
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
+#if (UseSqlite)
                 ["ConnectionStrings:DefaultConnection"] = $"Data Source={_databasePath}"
+#else
+                ["ConnectionStrings:DefaultConnection"] =
+                    $"Server=(localdb)\\MSSQLLocalDB;Database={_databaseName};Trusted_Connection=True"
+#endif
             });
         });
     }
@@ -51,6 +62,7 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IDisposa
 
         if (disposing)
         {
+#if (UseSqlite)
             // SQLite keeps the file handle until pooled connections are cleared.
             Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
             foreach (var suffix in new[] { "", "-shm", "-wal" })
@@ -61,6 +73,13 @@ public sealed class TestWebAppFactory : WebApplicationFactory<Program>, IDisposa
                     try { File.Delete(path); } catch (IOException) { /* best effort */ }
                 }
             }
+#else
+            // LocalDB databases are left behind on purpose: dropping one needs a
+            // connection to master and single-user mode, which is more failure
+            // surface than it is worth in a test teardown. Clean up with
+            // `sqllocaldb stop MSSQLLocalDB` and deleting %USERPROFILE%\*.mdf,
+            // or drop the StarterAspMVCEditorTemplatesTest_* databases.
+#endif
         }
     }
 }

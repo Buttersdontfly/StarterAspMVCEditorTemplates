@@ -5,15 +5,24 @@ namespace StarterAspMVCEditorTemplates.Models.Account;
 
 public class LoginInputModel : IValidatableObject
 {
+    /// <summary>
+    /// Nullable on purpose, and it matters.
+    ///
+    /// ASP.NET Core adds an IMPLICIT [Required] to every non-nullable reference
+    /// type property. The login form renders either Email or UserName, never
+    /// both, so the one that is not rendered posts nothing and fails that
+    /// implicit rule -- with a message about a field the user was never shown.
+    /// Making both nullable removes the implicit requirement and leaves Validate
+    /// below as the single place that decides which identifier is needed.
+    /// </summary>
     [Display(Name = "Email")]
     [EmailAddress(ErrorMessage = "Enter an email address in the form name@example.com.")]
     [DataType(DataType.EmailAddress)]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     /// <summary>
-    /// Used only when AccountIdentityConventions.SignInWithEmail is false.
-    /// The field is always present so that flipping that constant needs no edit
-    /// here; the view decides which of the two to render.
+    /// Used when AccountIdentityConventions.SignInWithEmail is false. See the
+    /// note on Email for why this is nullable too.
     /// </summary>
     [Display(Name = "Username")]
     [UIHint("UserName")]
@@ -29,11 +38,11 @@ public class LoginInputModel : IValidatableObject
 
     /// <summary>
     /// Which identifier is required depends on the sign-in convention, and data
-    /// annotations are fixed at compile time, so the rule lives here instead.
+    /// annotations are fixed at compile time, so the rule lives here.
     ///
-    /// Note that this is server-side only: unobtrusive client validation emits
-    /// rules from attributes, so the browser will not pre-empt this one. The
-    /// server still rejects it, which is what matters.
+    /// Server-side only: unobtrusive client validation emits rules from
+    /// attributes, so the browser will not pre-empt this one. The server still
+    /// rejects it, which is what matters.
     /// </summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

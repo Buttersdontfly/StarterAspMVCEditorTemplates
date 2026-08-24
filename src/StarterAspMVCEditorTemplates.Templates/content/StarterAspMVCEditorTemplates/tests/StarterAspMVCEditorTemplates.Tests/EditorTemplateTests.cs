@@ -39,7 +39,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     [Fact]
     public async Task Gallery_renders_every_editor_template_with_bindable_names()
     {
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var document = await HtmlPage.ReadAsync(response);
@@ -60,7 +60,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
         // The collection case breaks most easily: MVC supplies the index, and a
         // template that builds its own names loses it. Binding then silently
         // drops every row.
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
         var names = HtmlPage.FieldNames(document);
 
@@ -88,7 +88,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
         // Guards the detail that makes these templates worth having. A date
         // field rendered as a plain text box still binds correctly, so nothing
         // else in the suite would notice the regression.
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         Assert.NotEmpty(document.QuerySelectorAll(selector));
@@ -99,7 +99,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     {
         // [Display(Name = "In review")] on an enum member must reach the option
         // text, or the UI shows the raw identifier.
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         Assert.Contains("In review", document.Body!.TextContent, StringComparison.Ordinal);
@@ -123,7 +123,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
         //
         // Without the opt-out this test could only be satisfied by giving those
         // controls names, which would post duplicate or junk values.
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         var unnamed = document.QuerySelectorAll("input, select, textarea")
@@ -144,7 +144,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
         // The other half of the rule above: data-no-post is an assertion about
         // behaviour, so anything carrying it must genuinely have no name. A
         // control with both would post a value nobody expects.
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         var contradictory = document.QuerySelectorAll("[data-no-post]")
@@ -160,7 +160,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     [Fact]
     public async Task Password_fields_use_the_right_autocomplete_hint()
     {
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         var passwords = document.QuerySelectorAll("input[type='password']").ToList();
@@ -178,7 +178,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     [Fact]
     public async Task Email_field_is_an_email_input()
     {
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         var emails = document.QuerySelectorAll("input[type='email']").ToList();
@@ -189,7 +189,7 @@ public class EditorTemplateTests(TestWebAppFactory factory) : IClassFixture<Test
     [Fact]
     public async Task Invalid_state_renders_validation_messages()
     {
-        var response = await factory.CreateClient().GetAsync("/dev/editors");
+        var response = await factory.CreateClient().GetAsync("/dev/editors", TestContext.Current.CancellationToken);
         var document = await HtmlPage.ReadAsync(response);
 
         var messages = document.QuerySelectorAll(".field-validation-error, .invalid-feedback")

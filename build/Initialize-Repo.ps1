@@ -30,6 +30,13 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $content = Join-Path $repo 'src/StarterAspMVCEditorTemplates.Templates/content/StarterAspMVCEditorTemplates/src/StarterAspMVCEditorTemplates'
 
+# Local tools are pinned in .config/dotnet-tools.json. Restoring here means a
+# fresh clone has dotnet-ef available without a global install or a PATH change.
+Write-Host 'Restoring local tools...' -ForegroundColor Cyan
+$global:LASTEXITCODE = 0
+dotnet tool restore
+if ($LASTEXITCODE -ne 0) { throw 'Could not restore local tools.' }
+
 Write-Host 'Checking build scripts parse...' -ForegroundColor Cyan
 # Reset first: $LASTEXITCODE persists from earlier native commands, so reading it
 # without clearing it can report a failure that belongs to something else.
@@ -52,8 +59,12 @@ else {
 }
 
 # --- EF Core migrations ---------------------------------------------------
+# Both provider sets must be present: the template ships whichever the chosen
+# database needs, and a missing set means that combo generates a project with no
+# schema at all.
 $migrations = Join-Path $content 'Migrations'
-if ((Test-Path $migrations) -and (Get-ChildItem $migrations -Filter *.cs -ErrorAction SilentlyContinue)) {
+$haveBoth = (Test-Path (Join-Path $migrations 'Sqlite')) -and (Test-Path (Join-Path $migrations 'SqlServer'))
+if ($haveBoth -and (Get-ChildItem $migrations -Filter *.cs -Recurse -ErrorAction SilentlyContinue)) {
     Write-Host 'Migrations present.' -ForegroundColor Green
 }
 else {
