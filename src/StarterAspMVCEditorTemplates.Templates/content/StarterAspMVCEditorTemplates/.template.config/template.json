@@ -1,6 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/template",
-  "author": "__AUTHOR__",
+  "author": "Buttersdontfly",
   "classifications": [
     "Web",
     "MVC",
@@ -194,6 +194,7 @@
             "src/StarterAspMVCEditorTemplates/Identity/**",
 			"src/StarterAspMVCEditorTemplates/Constants/Roles.cs",
 			"src/StarterAspMVCEditorTemplates/Utilities/ReflectionHelper.cs",
+			"src/StarterAspMVCEditorTemplates/Data/IDataInitializer.cs",
             "src/StarterAspMVCEditorTemplates/Data/DevelopmentDataSeeder.cs",
             "src/StarterAspMVCEditorTemplates/Data/DevelopmentDataSeeder.Log.cs",
             "src/StarterAspMVCEditorTemplates/Data/IdentityRoleSeeder.cs",

@@ -10,11 +10,11 @@
 
     <!-- MinVer: version is derived from the git tag. -->
     <MinVerTagPrefix>v</MinVerTagPrefix>    
-    <Authors>__AUTHOR__</Authors>
-    <Company>__AUTHOR__</Company>
-    <Copyright>Copyright (c) 2026 __AUTHOR__</Copyright>
-    <RepositoryUrl>https://github.com/__GITHUB_USER__/StarterAspMVCEditorTemplates</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/__GITHUB_USER__/StarterAspMVCEditorTemplates</PackageProjectUrl>
+    <Authors>Buttersdontfly</Authors>
+    <Company>Buttersdontfly</Company>
+    <Copyright>Copyright (c) 2026 Buttersdontfly</Copyright>
+    <RepositoryUrl>https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>

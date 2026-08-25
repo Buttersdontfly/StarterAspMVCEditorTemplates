@@ -26,7 +26,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
     private static string UniqueEmail() => $"testuser-{Guid.NewGuid():N}@example.com";
     private static string UniqueUsername() => $"testuser-{Guid.NewGuid():N}";
 
-    private async Task<HttpResponseMessage> PostFormAsync(
+    private static async Task<HttpResponseMessage> PostFormAsync(
         HttpClient client, string url, Dictionary<string, string> fields)
     {
         var page = await HtmlPage.ReadAsync(await client.GetAsync(url));
@@ -192,7 +192,7 @@ public class AccountFlowTests(TestWebAppFactory factory) : IClassFixture<TestWeb
             ["Email"] = DevelopmentDataSeeder.DevUserEmail
         });
 
-        var mailbox = await client.GetAsync("/dev/mailbox, TestContext.Current.CancellationToken");
+        var mailbox = await client.GetAsync("/dev/mailbox", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, mailbox.StatusCode);
 
         var document = await HtmlPage.ReadAsync(mailbox);

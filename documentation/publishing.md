@@ -4,7 +4,7 @@
 
 1. Log in to nuget.org, click your username, choose **Trusted Publishing**.
 2. Add a policy with:
-   - Repository owner: `__GITHUB_USER__`
+   - Repository owner: `Buttersdontfly`
    - Repository: `StarterAspMVCEditorTemplates`
    - Workflow file: `publish.yml` — **filename only**, not the
      `.github/workflows/` path

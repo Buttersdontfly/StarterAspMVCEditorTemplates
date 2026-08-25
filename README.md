@@ -12,8 +12,8 @@ cd MyApp && dotnet run
 
 Sign in with `dev@localhost` / `123User!`.
 
-Repository: <https://github.com/__GITHUB_USER__/StarterAspMVCEditorTemplates>
-Licence: MIT, (c) __AUTHOR__
+Repository: <https://github.com/Buttersdontfly/StarterAspMVCEditorTemplates>
+Licence: MIT, (c) Buttersdontfly
 
 ## Options
 
