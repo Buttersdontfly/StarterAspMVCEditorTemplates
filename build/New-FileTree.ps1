@@ -44,8 +44,9 @@ $pending = @'
 See `decisions.md` for why.
 
 ```
-content/.../src/StarterAspMVCEditorTemplates/Migrations/
-    -> build/Generate-Migrations.ps1 (needs the .NET SDK)
+content/.../src/StarterAspMVCEditorTemplates/Migrations/Sqlite/
+content/.../src/StarterAspMVCEditorTemplates/Migrations/SqlServer/
+    -> build/Generate-Migrations.ps1 (needs the .NET SDK; produces both sets)
 
 content/.../src/StarterAspMVCEditorTemplates/wwwroot/lib/
     bootstrap/css/bootstrap.min.css
