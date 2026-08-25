@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>SamplePlainApp</h1>
+<p class="lead">An MVC starter where every input is rendered by an editor template you own.</p>
+
+<p>
+    The editor templates are in <code>Views/Shared/EditorTemplates/</code>. Change one
+    file and every form that uses it changes.
+</p>
+
+@* Rendered only when the development pages are included. See _DevCards. *@
+<partial name="_DevCards" optional="true" />

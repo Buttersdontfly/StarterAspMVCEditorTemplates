@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 #if (UseIdentity)
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using StarterAspMVCEditorTemplates.Identity;
 #endif
@@ -16,7 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     {
         base.OnModelCreating(builder);
         builder.Entity<IdentityUserRole<Guid>>().ToTable("AspNetUserRoles");
-        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly); 
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly); 
     }
 
 }

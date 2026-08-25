@@ -1,0 +1,29 @@
+@*
+    Forced with [UIHint("Rating")]. Radio buttons under the hood, so it needs no
+    JavaScript and degrades gracefully - Bootstrap's btn-check does the styling.
+*@
+@model int
+@{
+    var meta = ViewData.ModelMetadata;
+    var name = ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
+    var baseId = TagBuilder.CreateSanitizedId(name, "_");
+    var range = meta.ValidatorMetadata.OfType<System.ComponentModel.DataAnnotations.RangeAttribute>().FirstOrDefault();
+    var max = Convert.ToInt32(range?.Maximum ?? 5);
+}
+<div class="mb-3">
+    <label class="form-label d-block">@meta.GetDisplayName()</label>
+    <div class="btn-group" role="group" aria-label="@meta.GetDisplayName()">
+        @for (var value = 1; value <= max; value++)
+        {
+            var id = $"{baseId}_{value}";
+            <input type="radio" class="btn-check" name="@name" id="@id" value="@value"
+                   autocomplete="off" checked="@(Model == value)" />
+            <label class="btn btn-outline-warning" for="@id">@value <span aria-hidden="true">&#9733;</span></label>
+        }
+    </div>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

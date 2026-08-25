@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -65,14 +66,14 @@ public sealed partial class DevConsoleEmailSender : IAppEmailSender
             // read as text rather than rendered as HTML, for the same reason the
             // console line is decoded.
             var link = FirstHref(message.HtmlBody);
-
+            var culture = CultureInfo.GetCultureInfo("en-US");
             var builder = new StringBuilder()
-                .AppendLine($"Date: {message.SentAt:R}")
-                .AppendLine($"To: {message.To}")
+                .AppendLine(culture, $"Date: {message.SentAt:R}")
+                .AppendLine(culture, $"To: {message.To}")
                 .AppendLine("From: no-reply@localhost")
-                .AppendLine($"Subject: {message.Subject}")
+                .AppendLine(culture, $"Subject: {message.Subject}")
                 .AppendLine("MIME-Version: 1.0")
-                .AppendLine($"X-Dev-Link: {link ?? "(none)"}")
+                .AppendLine(culture, $"X-Dev-Link: {link ?? "(none)"}")
                 .AppendLine("Content-Type: text/html; charset=utf-8")
                 .AppendLine()
                 .AppendLine(message.HtmlBody);

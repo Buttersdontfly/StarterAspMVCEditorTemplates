@@ -1,0 +1,29 @@
+@*
+    Forced with [UIHint("UserName")]. A plain string has no DataType and no
+    distinctive type name to resolve on, so String.cshtml would otherwise win.
+
+    SEAM: username identity. Rendered only when
+    AccountIdentityConventions.SignInWithEmail is false; with the default of
+    true the login and register views ask for an email instead. See
+    documentation/seams.md.
+*@
+@model string
+@{
+    var meta = ViewData.ModelMetadata;
+}
+<div class="mb-3">
+    <label asp-for="@Model" class="form-label">
+        @meta.GetDisplayName()
+        @if (meta.IsRequired)
+        {
+            <span class="text-danger">*</span>
+        }
+    </label>
+    <input asp-for="@Model" class="form-control"
+           autocomplete="username" spellcheck="false" placeholder="@meta.Placeholder" />
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

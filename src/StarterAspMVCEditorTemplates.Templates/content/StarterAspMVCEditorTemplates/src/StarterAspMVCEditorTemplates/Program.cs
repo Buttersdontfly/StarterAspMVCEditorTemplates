@@ -30,10 +30,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 #endif
 
 #if (UseIdentity)
-builder.Services.AddSingleton<IAppEmailSender, DevConsoleEmailSender>();
-#endif
-
-#if (UseIdentity)
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     {
         options.Password.RequiredLength = 8;
@@ -69,7 +65,13 @@ builder.Services.AddOptions<LookupProtectionOptions>()
     .ValidateOnStart();
 #endif
 
-builder.Services.AddScoped<IEmailSender<ApplicationUser>, IdentityEmailSenderAdapter>();
+#if (UseIdentity)
+if (builder.Environment.IsDevelopment()) {
+    builder.Services.AddSingleton<IAppEmailSender, DevConsoleEmailSender>();
+    builder.Services.AddScoped<IEmailSender<ApplicationUser>, IdentityEmailSenderAdapter>();
+    builder.Services.AddScoped<IDataInitializer, DevelopmentDataSeeder>();
+}
+#endif
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -81,6 +83,22 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
+#if (UseIdentity)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    if (!db.Database.GetMigrations().Any())
+    {
+        throw new InvalidOperationException();
+    }
+    await db.Database.MigrateAsync();
+
+    var seeder = scope.ServiceProvider.GetRequiredService<IDataInitializer>();
+    await seeder.SeedDataAsync();
+}
+#endif
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -88,25 +106,8 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-#if (UseIdentity)
-    if (!db.Database.GetMigrations().Any())
-    {
-        throw new InvalidOperationException(
-            """
-            This project has no EF Core migrations, so the database has no tables.
-
-            Create the first migration:
-                dotnet ef migrations add Initial --project src/<YourProject>
-
-            If you are working on the TEMPLATE rather than a generated project,
-            run build/Generate-Migrations.ps1 instead: migrations ship inside the
-            template and are not committed by the template's own build.
-            """);
-    }
-#endif
+#if (!UseIdentity)
     await db.Database.MigrateAsync();
-#if (UseIdentity)
-    await SeedData.SeedAsync(scope.ServiceProvider);
 #endif
 }
 else
@@ -128,7 +129,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.Run();
+await app.RunAsync();
 
 // Exposed so the integration tests can drive the app with WebApplicationFactory.
 public partial class Program;

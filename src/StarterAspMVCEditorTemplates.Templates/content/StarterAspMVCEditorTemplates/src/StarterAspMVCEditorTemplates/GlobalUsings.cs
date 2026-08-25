@@ -1,2 +1,2 @@
 ﻿global using StarterAspMVCEditorTemplates.Constants;
-global using StarterAspMVCEditorTemplates.Helpers;
+global using StarterAspMVCEditorTemplates.Utilities;

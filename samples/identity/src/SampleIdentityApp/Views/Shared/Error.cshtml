@@ -1,0 +1,12 @@
+@model SampleIdentityApp.Controllers.ErrorViewModel
+@{
+    ViewData["Title"] = "Something went wrong";
+}
+
+<h1>Something went wrong</h1>
+<p>The page could not be loaded. Try again, and if it keeps happening check the application logs.</p>
+
+@if (Model.ShowRequestId)
+{
+    <p class="text-muted small">Request ID: <code>@Model.RequestId</code></p>
+}

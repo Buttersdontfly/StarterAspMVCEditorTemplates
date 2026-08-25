@@ -1,0 +1,31 @@
+@*
+    Forced with [UIHint("Range")]. The bounds are read from the [Range]
+    validation attribute via ModelMetadata.ValidatorMetadata, so the model stays
+    the single source of truth.
+*@
+@model int
+@{
+    var meta = ViewData.ModelMetadata;
+    var range = meta.ValidatorMetadata.OfType<System.ComponentModel.DataAnnotations.RangeAttribute>().FirstOrDefault();
+    var min = Convert.ToInt32(range?.Minimum ?? 0);
+    var max = Convert.ToInt32(range?.Maximum ?? 100);
+    var step = ViewData["step"] as int? ?? 1;
+    var outputId = TagBuilder.CreateSanitizedId(ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty), "_") + "_output";
+}
+<div class="mb-3">
+    <div class="d-flex justify-content-between align-items-baseline">
+        <label asp-for="@Model" class="form-label">@meta.GetDisplayName()</label>
+        <output id="@outputId" class="badge text-bg-secondary">@Model</output>
+    </div>
+    <input asp-for="@Model" type="range" class="form-range"
+           min="@min" max="@max" step="@step" data-range-output="@outputId" />
+    <div class="d-flex justify-content-between text-muted small">
+        <span>@min</span>
+        <span>@max</span>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

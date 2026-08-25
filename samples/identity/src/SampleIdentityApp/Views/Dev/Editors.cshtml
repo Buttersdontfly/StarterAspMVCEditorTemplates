@@ -1,0 +1,146 @@
+@model SampleIdentityApp.Controllers.EditorGalleryModel
+@{
+    ViewData["Title"] = "Editor templates";
+
+    // Options handed to the templates that do not generate their own. Passing
+    // them from the view rather than baking them into the template is the point
+    // of Dropdown and CheckboxList: the template owns the markup, the caller
+    // owns the data.
+    var countries = EditorSampleModel.CountryItems;
+    var interests = EditorSampleModel.InterestItems;
+}
+
+<h1 class="h3">Editor templates</h1>
+<p class="text-muted">
+    Every template in <code>Views/Shared/EditorTemplates/</code>, in three states.
+    <code>EditorTemplateTests</code> asserts against this page, so a template that
+    is not reachable from here fails the build. Development only.
+</p>
+<p class="small">See <code>documentation/editor-templates.md</code> for the full guide.</p>
+
+@* enctype matters: FileUpload renders type="file", which needs it to post. *@
+<form method="post" enctype="multipart/form-data">
+    <div class="row g-4">
+        <div class="col-xl-4">
+            <h2 class="h5">Filled</h2>
+            <div data-state="filled">
+                @Html.EditorFor(m => m.Filled.PlainText)
+                @Html.EditorFor(m => m.Filled.WholeNumber)
+                @Html.EditorFor(m => m.Filled.Amount, new { currency = "EUR" })
+                @Html.EditorFor(m => m.Filled.Enabled)
+                @Html.EditorFor(m => m.Filled.Date)
+                @Html.EditorFor(m => m.Filled.Time)
+                @Html.EditorFor(m => m.Filled.Timestamp)
+                @Html.EditorFor(m => m.Filled.Status)
+                @Html.EditorFor(m => m.Filled.OptionalStatus)
+                @Html.EditorFor(m => m.Filled.Email)
+                @Html.EditorFor(m => m.Filled.Password, new { autocomplete = "new-password" })
+                @Html.EditorFor(m => m.Filled.Website)
+                @Html.EditorFor(m => m.Filled.Phone)
+                @Html.EditorFor(m => m.Filled.Notes, new { rows = 3 })
+                @Html.EditorFor(m => m.Filled.CountryCode, new { items = countries })
+                @Html.EditorFor(m => m.Filled.PreferredContact)
+                @Html.EditorFor(m => m.Filled.Interests, new { items = interests, columns = 2 })
+                @Html.EditorFor(m => m.Filled.Tags)
+                @Html.EditorFor(m => m.Filled.BrandColor)
+                @Html.EditorFor(m => m.Filled.Satisfaction)
+                @Html.EditorFor(m => m.Filled.Volume)
+                @Html.EditorFor(m => m.Filled.Attachment, new { accept = ".pdf,.png" })
+                @Html.EditorFor(m => m.Filled.UserName)
+                @Html.EditorFor(m => m.Filled.Name)
+                @Html.EditorFor(m => m.Filled.Address)
+
+                <label class="form-label d-block mt-3">Line items</label>
+                <div data-line-items>
+                    @Html.EditorFor(m => m.Filled.LineItems)
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <h2 class="h5">Invalid</h2>
+            <div data-state="invalid">
+                @Html.EditorFor(m => m.Invalid.PlainText)
+                @Html.EditorFor(m => m.Invalid.WholeNumber)
+                @Html.EditorFor(m => m.Invalid.Amount)
+                @Html.EditorFor(m => m.Invalid.Email)
+                @Html.EditorFor(m => m.Invalid.Password)
+                @Html.EditorFor(m => m.Invalid.Website)
+                @Html.EditorFor(m => m.Invalid.Phone)
+                @Html.EditorFor(m => m.Invalid.Name)
+                @Html.EditorFor(m => m.Invalid.Address)
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <h2 class="h5">Empty</h2>
+            <div data-state="empty">
+                @Html.EditorFor(m => m.Empty.PlainText)
+                @Html.EditorFor(m => m.Empty.WholeNumber)
+                @Html.EditorFor(m => m.Empty.Amount)
+                @Html.EditorFor(m => m.Empty.Enabled)
+                @Html.EditorFor(m => m.Empty.Date)
+                @Html.EditorFor(m => m.Empty.Time)
+                @Html.EditorFor(m => m.Empty.Timestamp)
+                @Html.EditorFor(m => m.Empty.Status)
+                @Html.EditorFor(m => m.Empty.OptionalStatus)
+                @Html.EditorFor(m => m.Empty.Email)
+                @Html.EditorFor(m => m.Empty.Password)
+                @Html.EditorFor(m => m.Empty.Website)
+                @Html.EditorFor(m => m.Empty.Phone)
+                @Html.EditorFor(m => m.Empty.Notes)
+                @Html.EditorFor(m => m.Empty.CountryCode, new { items = countries })
+                @Html.EditorFor(m => m.Empty.PreferredContact)
+                @Html.EditorFor(m => m.Empty.Interests, new { items = interests, columns = 2 })
+                @Html.EditorFor(m => m.Empty.Tags)
+                @Html.EditorFor(m => m.Empty.BrandColor)
+                @Html.EditorFor(m => m.Empty.Satisfaction)
+                @Html.EditorFor(m => m.Empty.Volume)
+                @Html.EditorFor(m => m.Empty.Attachment)
+                @Html.EditorFor(m => m.Empty.UserName)
+                @Html.EditorFor(m => m.Empty.Name)
+                @Html.EditorFor(m => m.Empty.Address)
+            </div>
+        </div>
+    </div>
+</form>
+
+<hr class="my-4" />
+
+<h2 class="h5">How each template is chosen</h2>
+<p class="text-muted small">
+    MVC looks in this order: the name passed to <code>EditorFor</code>, then
+    <code>[UIHint]</code>, then <code>[DataType]</code>, then the model's type
+    name, then its base types, then <code>Object</code>.
+</p>
+<div class="table-responsive">
+    <table class="table table-sm align-middle">
+        <thead><tr><th>Template</th><th>Chosen by</th><th>Applies to</th></tr></thead>
+        <tbody>
+            <tr><td><code>String</code></td><td>Type name</td><td>Any string with no hint or data type</td></tr>
+            <tr><td><code>Int32</code></td><td>Type name</td><td><code>int</code></td></tr>
+            <tr><td><code>Decimal</code></td><td>Type name</td><td><code>decimal</code></td></tr>
+            <tr><td><code>Boolean</code></td><td>Type name</td><td><code>bool</code></td></tr>
+            <tr><td><code>DateOnly</code> / <code>TimeOnly</code> / <code>DateTime</code></td><td>Type name</td><td>The matching type</td></tr>
+            <tr><td><code>Enum</code></td><td>Type name</td><td>Any enum</td></tr>
+            <tr><td><code>EmailAddress</code></td><td><code>[DataType]</code></td><td><code>EmailAddress</code></td></tr>
+            <tr><td><code>Password</code></td><td><code>[DataType]</code></td><td><code>Password</code></td></tr>
+            <tr><td><code>Url</code></td><td><code>[DataType]</code></td><td><code>Url</code></td></tr>
+            <tr><td><code>PhoneNumber</code></td><td><code>[DataType]</code></td><td><code>PhoneNumber</code></td></tr>
+            <tr><td><code>MultilineText</code></td><td><code>[DataType]</code></td><td><code>MultilineText</code></td></tr>
+            <tr><td><code>Dropdown</code></td><td><code>[UIHint]</code></td><td>Needs <code>items</code></td></tr>
+            <tr><td><code>RadioGroup</code></td><td><code>[UIHint]</code></td><td>Enum, or <code>items</code></td></tr>
+            <tr><td><code>CheckboxList</code></td><td><code>[UIHint]</code></td><td>Needs <code>items</code></td></tr>
+            <tr><td><code>Tags</code></td><td><code>[UIHint]</code></td><td><code>IEnumerable&lt;string&gt;</code></td></tr>
+            <tr><td><code>Color</code></td><td><code>[UIHint]</code></td><td>Hex string</td></tr>
+            <tr><td><code>Rating</code> / <code>Range</code></td><td><code>[UIHint]</code></td><td><code>int</code>, bounded by <code>[Range]</code></td></tr>
+            <tr><td><code>FileUpload</code></td><td><code>[UIHint]</code></td><td><code>IFormFile</code></td></tr>
+            <tr><td><code>UserName</code></td><td><code>[UIHint]</code></td><td>Login identifier seam</td></tr>
+            <tr><td><code>PersonNameInputModel</code> / <code>AddressInputModel</code> / <code>LineItem</code></td><td>Type name</td><td>Complex types</td></tr>
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

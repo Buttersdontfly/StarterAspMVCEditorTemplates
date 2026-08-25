@@ -1,0 +1,26 @@
+@* Forced with [UIHint("Color")]. The swatch and the hex box stay in sync. *@
+@model string
+@{
+    var meta = ViewData.ModelMetadata;
+    var name = ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
+    var baseId = TagBuilder.CreateSanitizedId(name, "_");
+    var value = string.IsNullOrWhiteSpace(Model) ? "#0d6efd" : Model;
+}
+<div class="mb-3">
+    <label for="@baseId" class="form-label">@meta.GetDisplayName()</label>
+    <div class="input-group">
+        @* Only the text box carries the field name, so exactly one value posts back. *@
+        @* data-no-post: the swatch is a picker for the text box beside it. Only
+           the text box carries the name, so exactly one value posts. *@
+        <input type="color" class="form-control form-control-color flex-grow-0"
+               id="@(baseId)_swatch" value="@value" data-color-text="@baseId"
+               data-no-post title="Pick a colour" />
+        <input type="text" class="form-control" name="@name" id="@baseId" value="@Model"
+               data-color-swatch="@(baseId)_swatch" placeholder="#0d6efd" />
+    </div>
+    @if (!string.IsNullOrWhiteSpace(meta.Description))
+    {
+        <div class="form-text">@meta.Description</div>
+    }
+    <span asp-validation-for="@Model" class="text-danger small"></span>
+</div>

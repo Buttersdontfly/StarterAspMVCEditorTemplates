@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace StarterAspMVCEditorTemplates.Helpers;
+namespace SamplePlainApp.Utilities;
 
 public static class ReflectionHelper
 {
