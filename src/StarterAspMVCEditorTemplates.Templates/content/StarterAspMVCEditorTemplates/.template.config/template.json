@@ -192,7 +192,7 @@
             "src/StarterAspMVCEditorTemplates/Views/Shared/EditorTemplates/UserName.cshtml",
             "src/StarterAspMVCEditorTemplates/Models/Account/**",
             "src/StarterAspMVCEditorTemplates/Identity/**",
-			"src/StarterAspMVCEditorTemplates/Constant/Roles.cs",
+			"src/StarterAspMVCEditorTemplates/Constants/Roles.cs",
 			"src/StarterAspMVCEditorTemplates/Utilities/ReflectionHelper.cs",
             "src/StarterAspMVCEditorTemplates/Data/DevelopmentDataSeeder.cs",
             "src/StarterAspMVCEditorTemplates/Data/DevelopmentDataSeeder.Log.cs",
