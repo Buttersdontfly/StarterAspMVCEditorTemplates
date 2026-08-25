@@ -12,7 +12,7 @@ using StarterAspMVCEditorTemplates.Data;
 namespace StarterAspMVCEditorTemplates.Migrations.SqlServer
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260825085504_Initial")]
+    [Migration("20260825105723_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

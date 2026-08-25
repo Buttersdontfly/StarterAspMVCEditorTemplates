@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SampleIdentityApp.Data;
+using StarterAspMVCEditorTemplates.Data;
 
 #nullable disable
 
-namespace SampleIdentityApp.Migrations.Sqlite
+namespace StarterAspMVCEditorTemplates.Migrations.Sqlite
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260825085455_Initial")]
+    [Migration("20260825105714_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -119,7 +119,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("SampleIdentityApp.Identity.ApplicationRole", b =>
+            modelBuilder.Entity("StarterAspMVCEditorTemplates.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,7 +146,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("SampleIdentityApp.Identity.ApplicationUser", b =>
+            modelBuilder.Entity("StarterAspMVCEditorTemplates.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -216,7 +216,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationRole", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -225,7 +225,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationUser", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -234,7 +234,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationUser", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -243,13 +243,13 @@ namespace SampleIdentityApp.Migrations.Sqlite
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationRole", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationUser", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -258,7 +258,7 @@ namespace SampleIdentityApp.Migrations.Sqlite
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("SampleIdentityApp.Identity.ApplicationUser", null)
+                    b.HasOne("StarterAspMVCEditorTemplates.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
